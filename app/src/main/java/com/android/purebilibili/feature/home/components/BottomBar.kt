@@ -390,6 +390,25 @@ internal fun resolveKernelSuFloatingBottomBarWidth(
     return minOf(preferredWidth, widthCap).coerceAtMost(containerWidth)
 }
 
+internal fun resolveKernelSuBottomBarItemSlotWidth(
+    dockWidth: Dp,
+    horizontalPadding: Dp,
+    itemCount: Int
+): Dp {
+    val safeItemCount = itemCount.coerceAtLeast(1)
+    return ((dockWidth - (horizontalPadding * 2)) / safeItemCount)
+        .coerceAtLeast(0.dp)
+}
+
+internal fun resolveKernelSuBottomBarItemCenterX(
+    itemIndex: Int,
+    itemWidth: Dp,
+    horizontalPadding: Dp
+): Dp {
+    val safeIndex = itemIndex.coerceAtLeast(0)
+    return horizontalPadding + (itemWidth * safeIndex) + (itemWidth / 2f)
+}
+
 internal data class KernelSuBottomBarSearchLayout(
     val dockWidth: Dp,
     val searchWidth: Dp,
@@ -2801,7 +2820,11 @@ private fun KernelSuAlignedBottomBar(
             )
             val compactHomeIconSize = resolveKernelSuExpandedHomeIconSize()
             val compactHomeIconScale = resolveKernelSuExpandedHomeIconScale()
-            val indicatorWidth = (dockWidth - (dockHorizontalPadding * 2)) / totalItems
+            val indicatorWidth = resolveKernelSuBottomBarItemSlotWidth(
+                dockWidth = dockWidth,
+                horizontalPadding = dockHorizontalPadding,
+                itemCount = totalItems
+            )
             val itemWidthPx = with(density) { indicatorWidth.toPx() }.coerceAtLeast(1f)
             val panelOffsetPx by remember(density, itemWidthPx) {
                 derivedStateOf {
@@ -3060,6 +3083,7 @@ private fun KernelSuAlignedBottomBar(
                             val contentColor = visibleItemContentColor(item, coverage)
                             AndroidNativeBottomBarItem(
                                 item = item,
+                                itemWidth = indicatorWidth,
                                 label = resolveBottomNavItemLabel(item),
                                 dynamicUnreadCount = dynamicUnreadCount,
                                 selected = coverage >= 0.5f,
@@ -3084,6 +3108,7 @@ private fun KernelSuAlignedBottomBar(
                             val contentColor = visibleItemContentColor(null, coverage)
                             AndroidNativeBottomBarItem(
                                 item = null,
+                                itemWidth = indicatorWidth,
                                 label = stringResource(R.string.sidebar_toggle),
                                 dynamicUnreadCount = dynamicUnreadCount,
                                 selected = coverage >= 0.5f,
@@ -3167,6 +3192,7 @@ private fun KernelSuAlignedBottomBar(
                                     val contentColor = exportItemContentColor(item, coverage)
                                     AndroidNativeBottomBarItem(
                                         item = item,
+                                        itemWidth = indicatorWidth,
                                         label = resolveBottomNavItemLabel(item),
                                         dynamicUnreadCount = dynamicUnreadCount,
                                         selected = coverage >= 0.5f,
@@ -3191,6 +3217,7 @@ private fun KernelSuAlignedBottomBar(
                                     val contentColor = exportItemContentColor(null, coverage)
                                     AndroidNativeBottomBarItem(
                                         item = null,
+                                        itemWidth = indicatorWidth,
                                         label = stringResource(R.string.sidebar_toggle),
                                         dynamicUnreadCount = dynamicUnreadCount,
                                         selected = coverage >= 0.5f,
@@ -3283,6 +3310,7 @@ private fun KernelSuAlignedBottomBar(
                     visiblePanelOffsetPx = presetPanelOffsets.visiblePanelOffsetPx,
                     dampedDragState = dampedDragState,
                     itemWidthPx = itemWidthPx,
+                    itemWidth = indicatorWidth,
                     onItemClick = { index, item ->
                         val searchOverride = resolveBottomBarSearchExpansionOverrideOnNavItemClick(
                             currentItem = currentItem,
@@ -3617,6 +3645,7 @@ private fun BoxScope.KernelSuBottomBarInputLayer(
     visiblePanelOffsetPx: Float,
     dampedDragState: DampedDragAnimationState,
     itemWidthPx: Float,
+    itemWidth: Dp,
     onItemClick: (Int, BottomNavItem) -> Unit,
     onSidebarClick: () -> Unit
 ) {
@@ -3635,6 +3664,7 @@ private fun BoxScope.KernelSuBottomBarInputLayer(
     ) {
         visibleItems.forEachIndexed { index, item ->
             BottomBarInputTarget(
+                itemWidth = itemWidth,
                 onClick = { onItemClick(index, item) },
                 onPressChanged = dampedDragState::setPressed
             )
@@ -3642,6 +3672,7 @@ private fun BoxScope.KernelSuBottomBarInputLayer(
 
         if (isTablet && hasSidebarToggle) {
             BottomBarInputTarget(
+                itemWidth = itemWidth,
                 onClick = onSidebarClick,
                 onPressChanged = dampedDragState::setPressed
             )
@@ -3919,6 +3950,7 @@ private fun KernelSuBottomBarSearchVisualContent(
 
 @Composable
 private fun RowScope.BottomBarInputTarget(
+    itemWidth: Dp,
     onClick: () -> Unit,
     onPressChanged: (Boolean) -> Unit
 ) {
@@ -3937,8 +3969,7 @@ private fun RowScope.BottomBarInputTarget(
 
     Box(
         modifier = Modifier
-            .weight(1f)
-            .defaultMinSize(minWidth = 76.dp)
+            .width(itemWidth)
             .fillMaxHeight()
             .clip(resolveSharedBottomBarCapsuleShape())
             .clickable(
@@ -3952,6 +3983,7 @@ private fun RowScope.BottomBarInputTarget(
 @Composable
 private fun RowScope.AndroidNativeBottomBarItem(
     item: BottomNavItem?,
+    itemWidth: Dp,
     label: String,
     dynamicUnreadCount: Int = 0,
     selected: Boolean,
@@ -4006,8 +4038,7 @@ private fun RowScope.AndroidNativeBottomBarItem(
 
     Box(
         modifier = Modifier
-            .weight(1f)
-            .defaultMinSize(minWidth = 76.dp)
+            .width(itemWidth)
             .fillMaxHeight()
             .graphicsLayer {
                 scaleX = scale * clickPulseTransform.scaleX

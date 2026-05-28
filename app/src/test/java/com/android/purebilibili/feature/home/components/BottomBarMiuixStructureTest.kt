@@ -309,6 +309,29 @@ class BottomBarMiuixStructureTest {
     }
 
     @Test
+    fun `sukisu bottom bar item content and input share indicator slot width`() {
+        val source = loadSource("app/src/main/java/com/android/purebilibili/feature/home/components/BottomBar.kt")
+        val kernelSuRendererSource = source
+            .substringAfter("private fun KernelSuAlignedBottomBar(")
+            .substringBefore("@Composable\nprivate fun KernelSuBottomBarShell(")
+        val itemRendererSource = source
+            .substringAfter("private fun RowScope.AndroidNativeBottomBarItem(")
+            .substringBefore("private fun resolveMaterialBottomBarIcon(")
+        val inputTargetSource = source
+            .substringAfter("private fun RowScope.BottomBarInputTarget(")
+            .substringBefore("@Composable\nprivate fun RowScope.AndroidNativeBottomBarItem(")
+
+        assertTrue(kernelSuRendererSource.contains("resolveKernelSuBottomBarItemSlotWidth("))
+        assertTrue(kernelSuRendererSource.contains("itemWidth = indicatorWidth"))
+        assertTrue(itemRendererSource.contains("itemWidth: Dp"))
+        assertTrue(inputTargetSource.contains("itemWidth: Dp"))
+        assertTrue(itemRendererSource.contains(".width(itemWidth)"))
+        assertTrue(inputTargetSource.contains(".width(itemWidth)"))
+        assertFalse(itemRendererSource.contains(".defaultMinSize(minWidth = 76.dp)"))
+        assertFalse(inputTargetSource.contains(".defaultMinSize(minWidth = 76.dp)"))
+    }
+
+    @Test
     fun `home top skin does not render broad atmosphere block`() {
         val source = loadSource("app/src/main/java/com/android/purebilibili/feature/home/components/iOSHomeHeader.kt")
         val skinDecorationSource = loadSource("app/src/main/java/com/android/purebilibili/feature/home/components/BottomBarUiSkin.kt")
