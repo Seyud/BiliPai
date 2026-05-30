@@ -481,6 +481,8 @@ fun AppNavigation(
         
         // 统一侧边栏判定策略：600dp+ 且用户开启侧边栏
         val useSideNavigation = shouldUseSidebarNavigationForLayout(windowSizeClass, tabletUseSidebar)
+        // 由所有入口共用的底栏内部显隐状态。进视频前先置为隐藏，避免返回到主入口后再补一次隐藏动画。
+        var isBottomBarVisible by remember { mutableStateOf(true) }
 
         // [修复] 平板模式下(宽度>=600dp)，进入设置页(Settings.route)时隐藏底栏
         // 因为平板设置页使用 SplitLayout，已经有自己的内部导航结构，不需要底栏
@@ -627,6 +629,15 @@ fun AppNavigation(
             navigation3ReturnSession = navigation3ReturnSession
                 .recordVideoSource(source)
                 .markDetailEntered(SystemClock.uptimeMillis())
+            if (
+                shouldPrimeBottomBarHiddenBeforeVideoNavigation(
+                    sourceRoute = source.route,
+                    visibleBottomBarRoutes = visibleBottomBarRoutes,
+                    useSideNavigation = useSideNavigation
+                )
+            ) {
+                isBottomBarVisible = false
+            }
             miniPlayerManager?.isNavigatingToVideo = true
             miniPlayerManager?.exitMiniMode(animate = false)
             val key = when (parsedKey) {
@@ -758,7 +769,6 @@ fun AppNavigation(
         // 1. 永久隐藏模式 -> 始终隐藏
         // 2. 始终显示模式 -> 始终显示
         // 3. 上滑隐藏模式 -> 由子页面通过 LocalSetBottomBarVisible 控制，初始为 true
-        var isBottomBarVisible by remember { mutableStateOf(true) }
         var suppressBottomBarHideRequestsUntilMillis by remember {
             androidx.compose.runtime.mutableLongStateOf(0L)
         }

@@ -48,6 +48,15 @@ internal fun resolveVideoReturnBottomBarHideSuppressionMs(
     return if (cardTransitionEnabled) 200L else 80L
 }
 
+internal fun shouldPrimeBottomBarHiddenBeforeVideoNavigation(
+    sourceRoute: String?,
+    visibleBottomBarRoutes: Set<String>,
+    useSideNavigation: Boolean
+): Boolean {
+    val sourceRouteBase = sourceRoute?.substringBefore("?") ?: return false
+    return !useSideNavigation && sourceRouteBase in visibleBottomBarRoutes
+}
+
 internal fun shouldClearReturningStateWhenDisposingVideoDestination(
     stillInVideoRoute: Boolean
 ): Boolean {

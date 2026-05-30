@@ -29,10 +29,9 @@ class VideoPlayerCoverPolicyTest {
     }
 
     @Test
-    fun forcedReturnCoverSharedBounds_doesNotLayerExtraSpringOnHomeReturn() {
-        // Home 源：详情↔卡片 shell sharedBounds 已经完整接管 morph。
-        // 这里若再挂一层封面 sharedBounds 会引入单边 spring 回弹（首页卡片侧无对端）。
-        assertFalse(
+    fun forcedReturnCoverSharedBounds_keepsHomeCoverKeyMatchedDuringReturn() {
+        // 返回阶段播放器容器会让出 sharedBounds，强制封面必须承接同一个 cover key。
+        assertTrue(
             shouldEnableForcedReturnCoverSharedBounds(
                 forceCoverDuringReturnAnimation = true,
                 transitionEnabled = true,
@@ -41,7 +40,7 @@ class VideoPlayerCoverPolicyTest {
                 sourceRoute = com.android.purebilibili.navigation.ScreenRoutes.Home.route
             )
         )
-        assertFalse(
+        assertTrue(
             shouldEnableForcedReturnCoverSharedBounds(
                 forceCoverDuringReturnAnimation = true,
                 transitionEnabled = true,
