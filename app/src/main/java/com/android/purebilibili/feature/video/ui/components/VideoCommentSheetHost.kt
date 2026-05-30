@@ -661,7 +661,7 @@ fun VideoCommentSheetHost(
 }
 
 @Composable
-private fun VideoCommentMainList(
+internal fun VideoCommentMainList(
     viewModel: VideoCommentViewModel,
     showIdentityDecorations: Boolean,
     onRootCommentClick: () -> Unit,

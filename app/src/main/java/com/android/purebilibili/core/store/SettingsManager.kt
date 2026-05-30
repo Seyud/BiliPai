@@ -2,6 +2,7 @@
 package com.android.purebilibili.core.store
 
 import android.content.Context
+import com.android.purebilibili.BuildConfig
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
@@ -68,9 +69,15 @@ internal val Context.settingsDataStore by preferencesDataStore(name = "settings_
 
 internal const val DEFAULT_CRASH_TRACKING_ENABLED = true
 internal const val DEFAULT_ANALYTICS_ENABLED = true
-internal const val DEFAULT_PLAYER_DIAGNOSTIC_LOGGING_ENABLED = true
 internal const val DEFAULT_QUALITY_SWITCH_FAILURE_DIALOG_ENABLED = true
 internal const val DEFAULT_QUALITY_SWITCH_FAILURE_DIALOG_ONCE_ENABLED = false
+
+internal fun resolveDefaultPlayerDiagnosticLoggingEnabled(isDebugBuild: Boolean): Boolean {
+    return !isDebugBuild
+}
+
+internal val DEFAULT_PLAYER_DIAGNOSTIC_LOGGING_ENABLED: Boolean =
+    resolveDefaultPlayerDiagnosticLoggingEnabled(BuildConfig.DEBUG)
 
 /**
  *  首页设置合并类 - 减少 HomeScreen 重组次数
@@ -901,6 +908,9 @@ object SettingsManager {
     private val KEY_CARD_ANIMATION_ENABLED = booleanPreferencesKey("card_animation_enabled")
     //  [新增] 卡片过渡动画开关
     private val KEY_CARD_TRANSITION_ENABLED = booleanPreferencesKey("card_transition_enabled")
+    //  [新增] 界面入场动画 master 开关(全 App 统一入场动效),默认开启
+    private val KEY_UI_ENTRANCE_ANIMATION_ENABLED =
+        booleanPreferencesKey("ui_entrance_animation_enabled")
     private val KEY_VIDEO_TRANSITION_REALTIME_BLUR_ENABLED =
         booleanPreferencesKey("video_transition_realtime_blur_enabled")
     // [New] 运行时视觉降级守卫开关
@@ -1765,6 +1775,14 @@ object SettingsManager {
 
     suspend fun setCardTransitionEnabled(context: Context, value: Boolean) {
         context.settingsDataStore.edit { preferences -> preferences[KEY_CARD_TRANSITION_ENABLED] = value }
+    }
+
+    //  [新增] --- 界面入场动画 master 开关(全 App 统一入场动效) ---
+    fun getUiEntranceAnimationEnabled(context: Context): Flow<Boolean> = context.settingsDataStore.data
+        .map { preferences -> preferences[KEY_UI_ENTRANCE_ANIMATION_ENABLED] ?: true }  // 默认开启
+
+    suspend fun setUiEntranceAnimationEnabled(context: Context, value: Boolean) {
+        context.settingsDataStore.edit { preferences -> preferences[KEY_UI_ENTRANCE_ANIMATION_ENABLED] = value }
     }
 
     fun getVideoTransitionRealtimeBlurEnabled(context: Context): Flow<Boolean> =
@@ -5212,6 +5230,7 @@ object SettingsManager {
                 SettingsShareSection.APPEARANCE
             ),
             BooleanShareablePreferenceDefinition(KEY_CARD_ANIMATION_ENABLED, SettingsShareSection.APPEARANCE),
+            BooleanShareablePreferenceDefinition(KEY_UI_ENTRANCE_ANIMATION_ENABLED, SettingsShareSection.APPEARANCE),
             BooleanShareablePreferenceDefinition(KEY_CARD_TRANSITION_ENABLED, SettingsShareSection.APPEARANCE),
             BooleanShareablePreferenceDefinition(
                 KEY_VIDEO_TRANSITION_REALTIME_BLUR_ENABLED,
