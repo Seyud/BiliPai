@@ -143,7 +143,6 @@ internal fun resolvePullContentOffsetFraction(
         val clampedDistance = distanceFraction.coerceIn(0f, 1.12f)
         return clampedDistance
     }
-    if (motionStyle == HomePullRefreshMotionStyle.MD3) return 0f
     val clampedDistance = distanceFraction.coerceAtMost(2f).coerceAtLeast(0f)
     return clampedDistance * 0.5f
 }
@@ -156,16 +155,6 @@ internal fun resolveStablePullContentOffsetFraction(
     motionStyle: HomePullRefreshMotionStyle = HomePullRefreshMotionStyle.IOS,
     indicatorStyle: HomePullRefreshIndicatorStyle = HomePullRefreshIndicatorStyle.IOS
 ): Float {
-    if (indicatorStyle == HomePullRefreshIndicatorStyle.MD3_SCREENSHOT_HANDLE) {
-        if (isRefreshing) return 0f
-        return resolvePullContentOffsetFraction(
-            distanceFraction = distanceFraction,
-            isRefreshing = isRefreshing,
-            motionStyle = motionStyle,
-            indicatorStyle = indicatorStyle
-        )
-    }
-    if (motionStyle == HomePullRefreshMotionStyle.MD3) return 0f
     val currentOffset = resolvePullContentOffsetFraction(
         distanceFraction = distanceFraction,
         isRefreshing = isRefreshing,
