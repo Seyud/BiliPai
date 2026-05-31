@@ -63,6 +63,19 @@ class HomeHeroFlyoutStructureTest {
         assertFalse(cardSource.contains("使用 renderInSharedTransitionScopeOverlayOption 控制可见性"))
     }
 
+    @Test
+    fun inlinePartitionPageKeepsPartitionVideoSourceInsteadOfHomeFeed() {
+        val source = loadSource("app/src/main/java/com/android/purebilibili/feature/home/HomeScreen.kt")
+        val partitionPageSource = source
+            .substringAfter("when (val entry = resolveHomeTopTabEntryOrNull(topTabEntries, page))")
+            .substringAfter("HomeTopTabEntry.Partition ->")
+            .substringBefore("is HomeTopTabEntry.Category ->")
+
+        assertTrue(partitionPageSource.contains("LocalVideoCardSharedElementSourceRoute provides partitionVideoSourceRoute"))
+        assertTrue(partitionPageSource.contains("onVideoClick = onPartitionVideoClick"))
+        assertFalse(partitionPageSource.contains("wrappedOnVideoClick("))
+    }
+
     private fun loadSource(path: String): String {
         val normalizedPath = path.removePrefix("app/")
         val sourceFile = listOf(

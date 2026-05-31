@@ -87,6 +87,19 @@ class AppNavigationNavigation3BridgeStructureTest {
     }
 
     @Test
+    fun inlinePartitionVideoClickKeepsPartitionAsVideoSourceRoute() {
+        val source = appNavigationSource()
+        val homeBranch = source
+            .substringAfter("BiliPaiNavEntryContentRole.HOME -> HomeScreen(")
+            .substringBefore("BiliPaiNavEntryContentRole.HISTORY ->")
+        val partitionVideoClickBlock = homeBranch
+            .substringAfter("onPartitionVideoClick = { video ->")
+            .substringBefore("onLiveClick = {")
+
+        assertTrue(partitionVideoClickBlock.contains("sourceRoute = ScreenRoutes.Partition.route"))
+    }
+
+    @Test
     fun classicBackMarksVideoReturnBeforePoppingNavigation3Stack() {
         val source = appNavigationSource()
 

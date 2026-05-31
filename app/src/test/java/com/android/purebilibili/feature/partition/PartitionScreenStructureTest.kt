@@ -32,8 +32,48 @@ class PartitionScreenStructureTest {
         val source = loadSource("app/src/main/java/com/android/purebilibili/feature/partition/PartitionScreen.kt")
 
         assertFalse(source.contains("pointerInput(partitions)"))
-        assertFalse(source.contains("awaitFirstDown("))
         assertFalse(source.contains("PointerEventPass.Initial"))
+        assertTrue(source.contains("awaitLongPressOrCancellation("))
+        assertTrue(source.contains("verticalDrag("))
+        assertTrue(source.contains("shouldStartPartitionSideRailIndicatorDrag("))
+    }
+
+    @Test
+    fun `side rail drag starts only from current indicator bounds`() {
+        assertTrue(
+            shouldStartPartitionSideRailIndicatorDrag(
+                pointerY = 64f,
+                indicatorTopPx = 60f,
+                indicatorHeightPx = 48f
+            )
+        )
+        assertFalse(
+            shouldStartPartitionSideRailIndicatorDrag(
+                pointerY = 40f,
+                indicatorTopPx = 60f,
+                indicatorHeightPx = 48f
+            )
+        )
+        assertFalse(
+            shouldStartPartitionSideRailIndicatorDrag(
+                pointerY = 64f,
+                indicatorTopPx = 60f,
+                indicatorHeightPx = 0f
+            )
+        )
+    }
+
+    @Test
+    fun `side rail indicator offset tracks lazy list scroll`() {
+        assertTrue(
+            resolvePartitionSideRailIndicatorOffsetPx(
+                indicatorPosition = 10f,
+                firstVisibleItemIndex = 8,
+                firstVisibleItemScrollOffsetPx = 12,
+                contentTopPaddingPx = 16f,
+                itemSlotHeightPx = 52f
+            ) == 108f
+        )
     }
 
     private fun loadSource(path: String): String {

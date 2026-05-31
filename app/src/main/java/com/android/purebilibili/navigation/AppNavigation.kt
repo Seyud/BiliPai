@@ -1184,6 +1184,16 @@ fun AppNavigation(
                                 onDynamicClick = { pushNavigation3Route(ScreenRoutes.Dynamic.route) },
                                 onHistoryClick = { pushNavigation3Route(ScreenRoutes.History.route) },
                                 onPartitionClick = { pushNavigation3Key(BiliPaiNavKey.Partition) },
+                                partitionVideoSourceRoute = ScreenRoutes.Partition.route,
+                                onPartitionVideoClick = { video ->
+                                    navigateToVideoInNavigation3(
+                                        bvid = video.bvid,
+                                        cid = video.cid,
+                                        coverUrl = video.pic,
+                                        initialVertical = video.isVertical,
+                                        sourceRoute = ScreenRoutes.Partition.route
+                                    )
+                                },
                                 onLiveClick = { roomId, title, uname ->
                                     pushNavigation3Route(ScreenRoutes.Live.createRoute(roomId, title, uname))
                                 },

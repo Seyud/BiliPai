@@ -108,6 +108,7 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import com.android.purebilibili.core.ui.shimmer
 import com.android.purebilibili.core.ui.LocalSharedTransitionScope  //  共享过渡
+import com.android.purebilibili.core.ui.transition.LocalVideoCardSharedElementSourceRoute
 import com.android.purebilibili.core.ui.animation.DissolvableVideoCard  //  粒子消散动画
 import com.android.purebilibili.core.ui.animation.jiggleOnDissolve      // 📳 iOS 风格抖动效果
 import com.android.purebilibili.core.ui.blur.rememberRecoverableHazeState
@@ -162,6 +163,18 @@ fun HomeScreen(
     onHistoryClick: () -> Unit = {},
     //  新增：分区回调
     onPartitionClick: () -> Unit = {},
+    partitionVideoSourceRoute: String = "partition",
+    onPartitionVideoClick: (VideoItem) -> Unit = { video ->
+        onVideoClick(
+            HomeVideoClickRequest(
+                bvid = video.bvid,
+                cid = video.cid,
+                coverUrl = video.pic,
+                isVerticalVideo = video.isVertical,
+                source = HomeVideoClickSource.GRID
+            )
+        )
+    },
     //  新增：直播点击回调
     onLiveClick: (Long, String, String) -> Unit = { _, _, _ -> },  // roomId, title, uname
     //  [修复] 番剧/影视回调，接受类型参数 (1=番剧 2=电影 等)
@@ -1252,25 +1265,19 @@ fun HomeScreen(
                         ) { page ->
                         when (val entry = resolveHomeTopTabEntryOrNull(topTabEntries, page)) {
                             HomeTopTabEntry.Partition -> {
-                                PartitionContent(
-                                    contentPadding = PaddingValues(
-                                        top = listTopPadding,
-                                        bottom = homeListBottomPadding,
-                                        start = 16.dp,
-                                        end = 16.dp
-                                    ),
-                                    onVideoClick = { video ->
-                                        wrappedOnVideoClick(
-                                            HomeVideoClickRequest(
-                                                bvid = video.bvid,
-                                                cid = video.cid,
-                                                coverUrl = video.pic,
-                                                isVerticalVideo = video.isVertical,
-                                                source = HomeVideoClickSource.GRID
-                                            )
-                                        )
-                                    }
-                                )
+                                CompositionLocalProvider(
+                                    LocalVideoCardSharedElementSourceRoute provides partitionVideoSourceRoute
+                                ) {
+                                    PartitionContent(
+                                        contentPadding = PaddingValues(
+                                            top = listTopPadding,
+                                            bottom = homeListBottomPadding,
+                                            start = 16.dp,
+                                            end = 16.dp
+                                        ),
+                                        onVideoClick = onPartitionVideoClick
+                                    )
+                                }
                             }
                             is HomeTopTabEntry.Category -> {
                         val category = entry.category
