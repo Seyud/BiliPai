@@ -35,9 +35,10 @@ class HomePopularSubCategorySegmentedControlStructureTest {
 
         assertTrue(screenSource.contains("val popularPagerState = rememberPagerState("))
         assertTrue(screenSource.contains("HorizontalPager(\n                                         state = popularPagerState"))
-        assertTrue(screenSource.contains("state.popularCategoryStates[subCategory] ?: CategoryContent()"))
+        assertTrue(screenSource.contains(".getPopularCategoryState(subCategory)"))
         assertTrue(viewModelSource.contains("popularCategoryStates = PopularSubCategory.entries.associateWith"))
         assertTrue(viewModelSource.contains("private fun updatePopularCategoryState("))
+        assertTrue(viewModelSource.contains("fun getPopularCategoryState(subCategory: PopularSubCategory)"))
         assertFalse(switchSource.contains("videos = emptyList()"))
     }
 

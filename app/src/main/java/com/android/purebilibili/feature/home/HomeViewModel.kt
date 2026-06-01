@@ -34,7 +34,12 @@ import com.android.purebilibili.feature.plugin.TodayWatchPluginMode
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 // 状态类已移至 HomeUiState.kt
@@ -201,9 +206,68 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         )
     )
     val uiState = _uiState.asStateFlow()
+    val currentCategory = homeStateFlow { it.currentCategory }
+    val displayedTabIndex = homeStateFlow { it.displayedTabIndex }
+    val popularSubCategory = homeStateFlow { it.popularSubCategory }
+    val liveSubCategory = homeStateFlow { it.liveSubCategory }
+    val user = homeStateFlow { it.user }
+    val messageUnreadCount = homeStateFlow { it.messageUnreadCount }
+    val refreshKey = homeStateFlow { it.refreshKey }
+    val refreshMessage = homeStateFlow { it.refreshMessage }
+    val refreshNewItemsCount = homeStateFlow { it.refreshNewItemsCount }
+    val refreshNewItemsKey = homeStateFlow { it.refreshNewItemsKey }
+    val refreshNewItemsHandledKey = homeStateFlow { it.refreshNewItemsHandledKey }
+    val recommendOldContentAnchorBvid = homeStateFlow { it.recommendOldContentAnchorBvid }
+    val recommendOldContentStartIndex = homeStateFlow { it.recommendOldContentStartIndex }
+    val recommendOldContentRevealKey = homeStateFlow { it.recommendOldContentRevealKey }
+    val dissolvingVideos = homeStateFlow { it.dissolvingVideos }
+    val followingMids = homeStateFlow { it.followingMids }
+    val todayWatchMode = homeStateFlow { it.todayWatchMode }
+    val todayWatchPlan = homeStateFlow { it.todayWatchPlan }
+    val todayWatchLoading = homeStateFlow { it.todayWatchLoading }
+    val todayWatchError = homeStateFlow { it.todayWatchError }
+    val todayWatchPluginEnabled = homeStateFlow { it.todayWatchPluginEnabled }
+    val todayWatchCollapsed = homeStateFlow { it.todayWatchCollapsed }
+    val todayWatchCardConfig = homeStateFlow { it.todayWatchCardConfig }
+    val undoAvailable = homeStateFlow { it.undoAvailable }
+
+    private val categoryStateFlows = HomeCategory.entries.associateWith { category ->
+        homeStateFlow { it.categoryStates[category] ?: CategoryContent() }
+    }
+    private val popularCategoryStateFlows = PopularSubCategory.entries.associateWith { subCategory ->
+        homeStateFlow { it.popularCategoryStates[subCategory] ?: CategoryContent() }
+    }
+
+    fun getCategoryState(category: HomeCategory): StateFlow<CategoryContent> = categoryStateFlows.getValue(category)
+
+    fun getPopularCategoryState(subCategory: PopularSubCategory): StateFlow<CategoryContent> =
+        popularCategoryStateFlows.getValue(subCategory)
+
+    fun getPreloadVideosSnapshot(
+        category: HomeCategory,
+        popularSubCategory: PopularSubCategory
+    ): List<VideoItem> {
+        val state = _uiState.value
+        return if (category == HomeCategory.POPULAR) {
+            state.popularCategoryStates[popularSubCategory]?.videos ?: state.videos
+        } else {
+            state.categoryStates[category]?.videos ?: state.videos
+        }
+    }
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing = _isRefreshing.asStateFlow()
+
+    private fun <T> homeStateFlow(selector: (HomeUiState) -> T): StateFlow<T> {
+        return _uiState
+            .map(selector)
+            .distinctUntilChanged()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Eagerly,
+                initialValue = selector(_uiState.value)
+            )
+    }
 
     private var refreshIdx = 0
     private var livePage = 1     //  直播分页

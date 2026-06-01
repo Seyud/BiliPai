@@ -128,10 +128,10 @@ class HomeRefreshPolicyTest {
             "松手进入刷新时旧卡片应留在当前位置，不能在 isRefreshing 变 true 时立即回顶"
         )
         assertTrue(
-            source.contains("LaunchedEffect(state.refreshNewItemsKey, isRefreshing, state.currentCategory)"),
+            source.contains("LaunchedEffect(refreshNewItemsKey, isRefreshing, currentCategory)"),
             "新卡片到达后再处理回顶和新增提示"
         )
-        assertTrue(source.indexOf("shouldResetToTopAfterIncrementalRefresh(") > source.indexOf("state.refreshNewItemsKey"))
+        assertTrue(source.indexOf("shouldResetToTopAfterIncrementalRefresh(") > source.indexOf("refreshNewItemsKey"))
     }
 
     @Test

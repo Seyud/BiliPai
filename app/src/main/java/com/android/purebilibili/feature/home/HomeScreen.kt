@@ -124,8 +124,10 @@ import com.android.purebilibili.core.util.resolveScrollToTopPlan
 import io.github.alexzhirkevich.cupertino.CupertinoActivityIndicator
 import coil.imageLoader
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged  //  性能优化：防止重复触发
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.yield
 import androidx.compose.animation.ExperimentalSharedTransitionApi  //  共享过渡实验API
@@ -195,8 +197,29 @@ fun HomeScreen(
     isQuickReturningFromVideoDetail: Boolean = false,
     onVideoDetailReturnAnimationConsumed: () -> Unit = {}
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+    val currentCategory by viewModel.currentCategory.collectAsStateWithLifecycle()
+    val displayedTabIndexFromState by viewModel.displayedTabIndex.collectAsStateWithLifecycle()
+    val popularSubCategory by viewModel.popularSubCategory.collectAsStateWithLifecycle()
+    val liveSubCategory by viewModel.liveSubCategory.collectAsStateWithLifecycle()
+    val user by viewModel.user.collectAsStateWithLifecycle()
+    val messageUnreadCount by viewModel.messageUnreadCount.collectAsStateWithLifecycle()
+    val refreshKey by viewModel.refreshKey.collectAsStateWithLifecycle()
+    val refreshMessage by viewModel.refreshMessage.collectAsStateWithLifecycle()
+    val refreshNewItemsCount by viewModel.refreshNewItemsCount.collectAsStateWithLifecycle()
+    val refreshNewItemsKey by viewModel.refreshNewItemsKey.collectAsStateWithLifecycle()
+    val refreshNewItemsHandledKey by viewModel.refreshNewItemsHandledKey.collectAsStateWithLifecycle()
+    val recommendOldContentAnchorBvid by viewModel.recommendOldContentAnchorBvid.collectAsStateWithLifecycle()
+    val recommendOldContentStartIndex by viewModel.recommendOldContentStartIndex.collectAsStateWithLifecycle()
+    val recommendOldContentRevealKey by viewModel.recommendOldContentRevealKey.collectAsStateWithLifecycle()
+    val todayWatchMode by viewModel.todayWatchMode.collectAsStateWithLifecycle()
+    val todayWatchPlan by viewModel.todayWatchPlan.collectAsStateWithLifecycle()
+    val todayWatchLoading by viewModel.todayWatchLoading.collectAsStateWithLifecycle()
+    val todayWatchError by viewModel.todayWatchError.collectAsStateWithLifecycle()
+    val todayWatchPluginEnabled by viewModel.todayWatchPluginEnabled.collectAsStateWithLifecycle()
+    val todayWatchCollapsed by viewModel.todayWatchCollapsed.collectAsStateWithLifecycle()
+    val todayWatchCardConfig by viewModel.todayWatchCardConfig.collectAsStateWithLifecycle()
+    val undoAvailable by viewModel.undoAvailable.collectAsStateWithLifecycle()
 // val pullRefreshState = rememberPullToRefreshState() // [Removed] Moved inside HorizontalPager
     val context = LocalContext.current
     val uiSkinState by rememberUiSkinState(context)
@@ -283,10 +306,10 @@ fun HomeScreen(
             launch {
                 // 双击首页回顶时强制展开顶部，避免收缩头部与回顶状态错位导致空白
                 setHeaderOffsetImmediate(0f)
-                val gridState = if (state.currentCategory == HomeCategory.POPULAR) {
-                    popularGridStates[state.popularSubCategory]
+                val gridState = if (currentCategory == HomeCategory.POPULAR) {
+                    popularGridStates[popularSubCategory]
                 } else {
-                    gridStates[state.currentCategory]
+                    gridStates[currentCategory]
                 }
                 val isAtTop = gridState == null || (gridState.firstVisibleItemIndex == 0 && gridState.firstVisibleItemScrollOffset < 50)
 
@@ -329,31 +352,31 @@ fun HomeScreen(
     }
     val initialPage = resolveHomeInitialTopTabPage(
         topTabEntries = topTabEntries,
-        currentCategory = state.currentCategory,
-        displayedTabIndex = state.displayedTabIndex
+        currentCategory = currentCategory,
+        displayedTabIndex = displayedTabIndexFromState
     )
     val initialPageSyncedWithState = shouldTreatInitialHomePagerPageAsSyncedWithState(
         initialEntry = resolveHomeTopTabEntryOrNull(topTabEntries, initialPage),
-        currentCategory = state.currentCategory
+        currentCategory = currentCategory
     )
     val pagerState = androidx.compose.foundation.pager.rememberPagerState(initialPage = initialPage) { topTabEntries.size }
     var hasSyncedPagerWithState by remember(topTabEntries) { mutableStateOf(initialPageSyncedWithState) }
     var lastDrivenPagerCategory by remember(topTabEntries) {
-        mutableStateOf(if (initialPageSyncedWithState) state.currentCategory else null)
+        mutableStateOf(if (initialPageSyncedWithState) currentCategory else null)
     }
     var programmaticPageSwitchInProgress by remember { mutableStateOf(false) }
-    val currentDisplayedTabIndex by rememberUpdatedState(state.displayedTabIndex)
+    val currentDisplayedTabIndex by rememberUpdatedState(displayedTabIndexFromState)
     TrackJankStateFlag(
         stateName = "home:pager_swipe",
         isActive = pagerState.isScrollInProgress
     )
     TrackJankStateValue(
         stateName = "home:current_category",
-        stateValue = state.currentCategory.name
+        stateValue = currentCategory.name
     )
 
     // [修复] 仅在完成首次“状态->Pager”对齐后，才允许“Pager->状态”反向同步，避免返回首页时误跳分类。
-    LaunchedEffect(pagerState, topTabEntries, hasSyncedPagerWithState, state.currentCategory) {
+    LaunchedEffect(pagerState, topTabEntries, hasSyncedPagerWithState, currentCategory) {
         if (!hasSyncedPagerWithState) return@LaunchedEffect
         snapshotFlow { pagerState.currentPage to pagerState.isScrollInProgress }
             .distinctUntilChanged()
@@ -362,7 +385,7 @@ fun HomeScreen(
                     viewModel.updateDisplayedTabIndex(page)
                 }
                 val currentCategoryIndex = topTabEntries
-                    .indexOf(HomeTopTabEntry.Category(state.currentCategory))
+                    .indexOf(HomeTopTabEntry.Category(currentCategory))
                     .takeIf { it >= 0 } ?: 0
                 val settledEntry = resolveHomeTopTabEntryOrNull(topTabEntries, page)
                 val settledCategory = (settledEntry as? HomeTopTabEntry.Category)?.category
@@ -387,7 +410,7 @@ fun HomeScreen(
     LaunchedEffect(topTabEntries) {
         val visibleCategories = topTabEntries.mapNotNull { (it as? HomeTopTabEntry.Category)?.category }
         val firstVisible = visibleCategories.firstOrNull() ?: return@LaunchedEffect
-        if (state.currentCategory !in visibleCategories) {
+        if (currentCategory !in visibleCategories) {
             viewModel.updateDisplayedTabIndex(0)
             viewModel.switchCategory(firstVisible)
         }
@@ -403,8 +426,8 @@ fun HomeScreen(
     }
 
     // [修复] 状态变化时驱动 Pager：首次使用无动画对齐，后续用动画跟随
-    LaunchedEffect(state.currentCategory, topTabEntries) {
-        val targetPage = topTabEntries.indexOf(HomeTopTabEntry.Category(state.currentCategory))
+    LaunchedEffect(currentCategory, topTabEntries) {
+        val targetPage = topTabEntries.indexOf(HomeTopTabEntry.Category(currentCategory))
         if (targetPage < 0) return@LaunchedEffect
         if (shouldUseInitialHomePagerSnap(
                 hasSyncedPagerWithState = hasSyncedPagerWithState,
@@ -413,19 +436,19 @@ fun HomeScreen(
         ) {
             pagerState.scrollToPage(targetPage)
             hasSyncedPagerWithState = true
-            lastDrivenPagerCategory = state.currentCategory
+            lastDrivenPagerCategory = currentCategory
             return@LaunchedEffect
         }
         if (shouldSkipHomePagerStateDrive(
                 hasSyncedPagerWithState = hasSyncedPagerWithState,
                 lastDrivenCategory = lastDrivenPagerCategory,
-                currentCategory = state.currentCategory
+                currentCategory = currentCategory
             )
         ) {
             return@LaunchedEffect
         }
         if (targetPage == pagerState.currentPage && !pagerState.isScrollInProgress) {
-            lastDrivenPagerCategory = state.currentCategory
+            lastDrivenPagerCategory = currentCategory
             return@LaunchedEffect
         }
         if (shouldAnimateHomePagerToCategory(
@@ -442,7 +465,7 @@ fun HomeScreen(
             } finally {
                 programmaticPageSwitchInProgress = false
             }
-            lastDrivenPagerCategory = state.currentCategory
+            lastDrivenPagerCategory = currentCategory
         }
     }
 
@@ -466,10 +489,10 @@ fun HomeScreen(
     }
     
     //  [埋点] 分类切换追踪
-    LaunchedEffect(state.currentCategory) {
+    LaunchedEffect(currentCategory) {
         com.android.purebilibili.core.util.AnalyticsHelper.logCategoryView(
-            categoryName = state.currentCategory.label,
-            categoryId = state.currentCategory.tid
+            categoryName = currentCategory.label,
+            categoryId = currentCategory.tid
         )
     }
 
@@ -500,9 +523,9 @@ fun HomeScreen(
     var refreshDeltaTipText by remember { mutableStateOf<String?>(null) }
     
     //  [彩蛋] 下拉刷新成功后显示趣味提示（仅在开关开启时）
-    LaunchedEffect(state.refreshKey, homeSettings.easterEggEnabled) {
-        val message = state.refreshMessage
-        if (message != null && state.refreshKey > 0 && homeSettings.easterEggEnabled) {
+    LaunchedEffect(refreshKey, homeSettings.easterEggEnabled) {
+        val message = refreshMessage
+        if (message != null && refreshKey > 0 && homeSettings.easterEggEnabled) {
             val result = snackbarHostState.showSnackbar(
                 message = message,
                 actionLabel = "关闭彩蛋",
@@ -514,16 +537,16 @@ fun HomeScreen(
         }
     }
 
-    LaunchedEffect(state.refreshNewItemsKey, isRefreshing, state.currentCategory) {
-        val refreshKey = state.refreshNewItemsKey
-        if (!shouldHandleRefreshNewItemsEvent(refreshKey, state.refreshNewItemsHandledKey)) {
+    LaunchedEffect(refreshNewItemsKey, isRefreshing, currentCategory) {
+        val refreshKey = refreshNewItemsKey
+        if (!shouldHandleRefreshNewItemsEvent(refreshKey, refreshNewItemsHandledKey)) {
             return@LaunchedEffect
         }
-        val count = state.refreshNewItemsCount ?: return@LaunchedEffect
-        if (state.currentCategory == HomeCategory.RECOMMEND && count > 0) {
+        val count = refreshNewItemsCount ?: return@LaunchedEffect
+        if (currentCategory == HomeCategory.RECOMMEND && count > 0) {
             val recommendGridState = gridStates[HomeCategory.RECOMMEND]
             if (recommendGridState != null && shouldResetToTopAfterIncrementalRefresh(
-                    currentCategory = state.currentCategory,
+                    currentCategory = currentCategory,
                     newItemsCount = count,
                     isRefreshing = isRefreshing,
                     firstVisibleItemIndex = recommendGridState.firstVisibleItemIndex,
@@ -543,29 +566,32 @@ fun HomeScreen(
 
     // 仅在推荐页检测“刷新后是否已下滑”，用于激活旧内容分割线
     LaunchedEffect(
-        state.currentCategory,
-        state.refreshNewItemsKey,
-        state.recommendOldContentAnchorBvid,
-        state.categoryStates[HomeCategory.RECOMMEND]?.videos
+        currentCategory,
+        refreshNewItemsKey,
+        refreshNewItemsCount,
+        recommendOldContentAnchorBvid,
+        recommendOldContentRevealKey
     ) {
-        if (state.currentCategory != HomeCategory.RECOMMEND) return@LaunchedEffect
-        if ((state.refreshNewItemsCount ?: 0) <= 0) return@LaunchedEffect
-        val targetKey = state.refreshNewItemsKey
-        if (targetKey <= 0L || state.recommendOldContentRevealKey == targetKey) return@LaunchedEffect
+        if (currentCategory != HomeCategory.RECOMMEND) return@LaunchedEffect
+        if ((refreshNewItemsCount ?: 0) <= 0) return@LaunchedEffect
+        val targetKey = refreshNewItemsKey
+        if (targetKey <= 0L || recommendOldContentRevealKey == targetKey) return@LaunchedEffect
 
-        val anchorBvid = state.recommendOldContentAnchorBvid ?: return@LaunchedEffect
-        val recommendVideos = state.categoryStates[HomeCategory.RECOMMEND]?.videos ?: return@LaunchedEffect
-        val anchorIndex = recommendVideos.indexOfFirst { it.bvid == anchorBvid }
-        if (anchorIndex <= 0) return@LaunchedEffect
-
+        val anchorBvid = recommendOldContentAnchorBvid ?: return@LaunchedEffect
         val recommendState = gridStates[HomeCategory.RECOMMEND] ?: return@LaunchedEffect
-        snapshotFlow {
-            val layoutInfo = recommendState.layoutInfo
-            val reachedByVisible = layoutInfo.visibleItemsInfo.any { it.index == anchorIndex }
-            val reachedByIndex = recommendState.firstVisibleItemIndex >= anchorIndex
-            reachedByVisible || reachedByIndex
-        }.first { it }
-        viewModel.markRecommendOldContentDividerRevealed(targetKey)
+        viewModel.getCategoryState(HomeCategory.RECOMMEND)
+            .map { content -> content.videos.indexOfFirst { it.bvid == anchorBvid } }
+            .distinctUntilChanged()
+            .collectLatest { anchorIndex ->
+                if (anchorIndex <= 0) return@collectLatest
+                snapshotFlow {
+                    val layoutInfo = recommendState.layoutInfo
+                    val reachedByVisible = layoutInfo.visibleItemsInfo.any { it.index == anchorIndex }
+                    val reachedByIndex = recommendState.firstVisibleItemIndex >= anchorIndex
+                    reachedByVisible || reachedByIndex
+                }.first { it }
+                viewModel.markRecommendOldContentDividerRevealed(targetKey)
+            }
     }
     
     //  [彩蛋] 关闭确认对话框
@@ -890,10 +916,10 @@ fun HomeScreen(
             BottomNavItem.HOME -> {
                 coroutineScope.launch { 
                     setHeaderOffsetImmediate(0f)
-                    val gridState = if (state.currentCategory == HomeCategory.POPULAR) {
-                        popularGridStates[state.popularSubCategory]
+                    val gridState = if (currentCategory == HomeCategory.POPULAR) {
+                        popularGridStates[popularSubCategory]
                     } else {
-                        gridStates[state.currentCategory]
+                        gridStates[currentCategory]
                     }
                     val isAtTop = gridState == null || (gridState.firstVisibleItemIndex == 0 && gridState.firstVisibleItemScrollOffset < 50)
                     
@@ -970,25 +996,25 @@ fun HomeScreen(
     }
     
     //  [新增] 滚动方向检测状态（用于上滑隐藏模式）
-    var bottomBarScrollState by remember(state.currentCategory, state.popularSubCategory) {
+    var bottomBarScrollState by remember(currentCategory, popularSubCategory) {
         mutableStateOf(
             HomeBottomBarScrollState(
-                firstVisibleItem = if (state.currentCategory == HomeCategory.POPULAR) {
-                    popularGridStates[state.popularSubCategory]?.firstVisibleItemIndex ?: 0
+                firstVisibleItem = if (currentCategory == HomeCategory.POPULAR) {
+                    popularGridStates[popularSubCategory]?.firstVisibleItemIndex ?: 0
                 } else {
-                    gridStates[state.currentCategory]?.firstVisibleItemIndex ?: 0
+                    gridStates[currentCategory]?.firstVisibleItemIndex ?: 0
                 },
-                scrollOffset = if (state.currentCategory == HomeCategory.POPULAR) {
-                    popularGridStates[state.popularSubCategory]?.firstVisibleItemScrollOffset ?: 0
+                scrollOffset = if (currentCategory == HomeCategory.POPULAR) {
+                    popularGridStates[popularSubCategory]?.firstVisibleItemScrollOffset ?: 0
                 } else {
-                    gridStates[state.currentCategory]?.firstVisibleItemScrollOffset ?: 0
+                    gridStates[currentCategory]?.firstVisibleItemScrollOffset ?: 0
                 }
             )
         )
     }
     
     //  [新增] 滚动方向检测逻辑
-    LaunchedEffect(state.currentCategory, state.popularSubCategory, bottomBarVisibilityMode, useSideNavigation) {
+    LaunchedEffect(currentCategory, popularSubCategory, bottomBarVisibilityMode, useSideNavigation) {
         resolveHomeBottomBarBaseVisibility(
             useSideNavigation = useSideNavigation,
             mode = bottomBarVisibilityMode
@@ -998,10 +1024,10 @@ fun HomeScreen(
         }
         
         // 上滑隐藏模式：监听滚动方向
-        val currentGridState = if (state.currentCategory == HomeCategory.POPULAR) {
-            popularGridStates[state.popularSubCategory]
+        val currentGridState = if (currentCategory == HomeCategory.POPULAR) {
+            popularGridStates[popularSubCategory]
         } else {
-            gridStates[state.currentCategory]
+            gridStates[currentCategory]
         } ?: return@LaunchedEffect
         snapshotFlow {
             Pair(currentGridState.firstVisibleItemIndex, currentGridState.firstVisibleItemScrollOffset)
@@ -1148,10 +1174,10 @@ fun HomeScreen(
     val bottomBarVisibleState = LocalSetBottomBarVisible.current
     
     // [Feature] Global Scroll Offset for Liquid Glass
-    val activeGridState = if (state.currentCategory == HomeCategory.POPULAR) {
-        popularGridStates[state.popularSubCategory]
+    val activeGridState = if (currentCategory == HomeCategory.POPULAR) {
+        popularGridStates[popularSubCategory]
     } else {
-        gridStates[state.currentCategory]
+        gridStates[currentCategory]
     }
     val canRevealHeader by remember(activeGridState) {
         derivedStateOf {
@@ -1233,18 +1259,18 @@ fun HomeScreen(
 
     // [TodayWatch首曝] 冷启动启动窗口内自动回顶一次，确保用户能看到今日推荐单卡片。
     LaunchedEffect(
-        state.todayWatchPluginEnabled,
-        state.todayWatchPlan?.generatedAt,
-        state.currentCategory
+        todayWatchPluginEnabled,
+        todayWatchPlan?.generatedAt,
+        currentCategory
     ) {
         if (todayWatchStartupRevealHandled) return@LaunchedEffect
 
         val recommendGridState = gridStates[HomeCategory.RECOMMEND] ?: return@LaunchedEffect
         val decision = decideTodayWatchStartupReveal(
             startupElapsedMs = SystemClock.elapsedRealtime() - homeStartupElapsedAt,
-            isPluginEnabled = state.todayWatchPluginEnabled,
-            currentCategory = state.currentCategory,
-            hasTodayPlan = state.todayWatchPlan != null && !state.todayWatchCollapsed,
+            isPluginEnabled = todayWatchPluginEnabled,
+            currentCategory = currentCategory,
+            hasTodayPlan = todayWatchPlan != null && !todayWatchCollapsed,
             firstVisibleItemIndex = recommendGridState.firstVisibleItemIndex,
             firstVisibleItemOffset = recommendGridState.firstVisibleItemScrollOffset
         )
@@ -1319,16 +1345,19 @@ fun HomeScreen(
                             }
                             is HomeTopTabEntry.Category -> {
                         val category = entry.category
-                        val categoryState = if (category == HomeCategory.POPULAR) {
-                            state.popularCategoryStates[state.popularSubCategory] ?: com.android.purebilibili.feature.home.CategoryContent()
-                        } else {
-                            state.categoryStates[category] ?: com.android.purebilibili.feature.home.CategoryContent()
+                        val categoryStateFlow = remember(viewModel, category, popularSubCategory) {
+                            if (category == HomeCategory.POPULAR) {
+                                viewModel.getPopularCategoryState(popularSubCategory)
+                            } else {
+                                viewModel.getCategoryState(category)
+                            }
                         }
+                        val categoryState by categoryStateFlow.collectAsStateWithLifecycle()
                         
                         //  独立的 PullToRefreshState，避免所有页面共享一个状态导致冲突
                         val pullRefreshState = rememberPullToRefreshState()
                         val pullDistanceFraction = pullRefreshState.distanceFraction
-                        val isPageRefreshing = isRefreshing && state.currentCategory == category
+                        val isPageRefreshing = isRefreshing && currentCategory == category
                         var stablePullOffsetFraction by remember { mutableFloatStateOf(0f) }
 
                         //  下拉物理由策略区分：MD3 截图式跟随当前手指距离回收，旧 iOS 弹性保留防抖滞后。
@@ -1376,7 +1405,7 @@ fun HomeScreen(
                         //  每个页面独立的 GridState
                         //  使用 saveable 记住滚动位置
                         val pageGridState = if (category == HomeCategory.POPULAR) {
-                            popularGridStates[state.popularSubCategory] ?: rememberLazyGridState()
+                            popularGridStates[popularSubCategory] ?: rememberLazyGridState()
                         } else {
                             gridStates[category] ?: rememberLazyGridState()
                         }
@@ -1384,7 +1413,7 @@ fun HomeScreen(
                         //  把 GridState 提升给父级用于控制 Header? 
                         
                         ComfortablePullToRefreshBox(
-                            isRefreshing = isRefreshing && state.currentCategory == category,
+                            isRefreshing = isRefreshing && currentCategory == category,
                             onRefresh = {
                                 if (category == HomeCategory.FOLLOW) {
                                     viewModel.refresh(category)
@@ -1496,15 +1525,17 @@ fun HomeScreen(
                                          )
                                      }
                                  }
-                             } else if (categoryState.error != null && categoryState.videos.isEmpty()) {
+                             } else {
+                                 val categoryError = categoryState.error
+                                 if (categoryError != null && categoryState.videos.isEmpty()) {
                                  // Error State per page
                                  Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                      ModernErrorState(
-                                         message = categoryState.error,
+                                         message = categoryError,
                                          onRetry = { viewModel.refresh() }
                                      )
                                  }
-                             } else {
+                                 } else {
                                  // Data Content
                                  // [性能优化] Stabilize event callbacks to prevent recomposition on scroll
                                  val onLoadMoreCallback = remember(viewModel) { { viewModel.loadMore() } }
@@ -1546,14 +1577,16 @@ fun HomeScreen(
                                      PopularSubCategory,
                                      () -> Unit
                                  ) -> Unit = { pageCategoryState, contentGridState, selectedPopularSubCategory, onPageLoadMore ->
+                                 val pageDissolvingVideos by viewModel.dissolvingVideos.collectAsStateWithLifecycle()
+                                 val pageFollowingMids by viewModel.followingMids.collectAsStateWithLifecycle()
                                  HomeCategoryPageContent(
                                      category = category,
                                      categoryState = pageCategoryState,
                                      gridState = contentGridState,
                                      gridColumns = gridColumns,
                                      contentPadding = homePageContentPadding,
-                                     dissolvingVideos = state.dissolvingVideos,
-                                     followingMids = state.followingMids,
+                                     dissolvingVideos = pageDissolvingVideos,
+                                     followingMids = pageFollowingMids,
                                      onVideoClick = wrappedOnVideoClick,
                                      onUpClick = onHomeFeedUpClick,
                                      onLiveClick = onLiveClickCallback,
@@ -1580,35 +1613,35 @@ fun HomeScreen(
                                      showDurationBadges = homeSettings.showHomeVideoDurationBadges,
                                      oldContentAnchorBvid = if (shouldShowRecommendOldContentDivider(
                                              currentCategory = category,
-                                             refreshNewItemsKey = state.refreshNewItemsKey,
-                                             revealedRefreshKey = state.recommendOldContentRevealKey,
-                                             anchorBvid = state.recommendOldContentAnchorBvid,
-                                             oldContentStartIndex = state.recommendOldContentStartIndex
+                                             refreshNewItemsKey = refreshNewItemsKey,
+                                             revealedRefreshKey = recommendOldContentRevealKey,
+                                             anchorBvid = recommendOldContentAnchorBvid,
+                                             oldContentStartIndex = recommendOldContentStartIndex
                                          )
                                      ) {
-                                         state.recommendOldContentAnchorBvid
+                                         recommendOldContentAnchorBvid
                                      } else {
                                          null
                                      },
                                      oldContentStartIndex = if (shouldShowRecommendOldContentDivider(
                                              currentCategory = category,
-                                             refreshNewItemsKey = state.refreshNewItemsKey,
-                                             revealedRefreshKey = state.recommendOldContentRevealKey,
-                                             anchorBvid = state.recommendOldContentAnchorBvid,
-                                             oldContentStartIndex = state.recommendOldContentStartIndex
+                                             refreshNewItemsKey = refreshNewItemsKey,
+                                             revealedRefreshKey = recommendOldContentRevealKey,
+                                             anchorBvid = recommendOldContentAnchorBvid,
+                                             oldContentStartIndex = recommendOldContentStartIndex
                                          )
                                      ) {
-                                         state.recommendOldContentStartIndex
+                                         recommendOldContentStartIndex
                                      } else {
                                          null
                                      },
-                                     todayWatchEnabled = category == HomeCategory.RECOMMEND && state.todayWatchPluginEnabled,
-                                     todayWatchMode = state.todayWatchMode,
-                                     todayWatchPlan = if (category == HomeCategory.RECOMMEND) state.todayWatchPlan else null,
-                                     todayWatchLoading = category == HomeCategory.RECOMMEND && state.todayWatchLoading,
-                                     todayWatchError = if (category == HomeCategory.RECOMMEND) state.todayWatchError else null,
-                                     todayWatchCollapsed = category == HomeCategory.RECOMMEND && state.todayWatchCollapsed,
-                                     todayWatchCardConfig = state.todayWatchCardConfig,
+                                     todayWatchEnabled = category == HomeCategory.RECOMMEND && todayWatchPluginEnabled,
+                                     todayWatchMode = todayWatchMode,
+                                     todayWatchPlan = if (category == HomeCategory.RECOMMEND) todayWatchPlan else null,
+                                     todayWatchLoading = category == HomeCategory.RECOMMEND && todayWatchLoading,
+                                     todayWatchError = if (category == HomeCategory.RECOMMEND) todayWatchError else null,
+                                     todayWatchCollapsed = category == HomeCategory.RECOMMEND && todayWatchCollapsed,
+                                     todayWatchCardConfig = todayWatchCardConfig,
                                      onTodayWatchModeChange = onTodayWatchModeChange,
                                      onTodayWatchCollapsedChange = onTodayWatchCollapsedChange,
                                      onTodayWatchRefresh = onTodayWatchRefresh,
@@ -1623,7 +1656,7 @@ fun HomeScreen(
                                  if (category == HomeCategory.POPULAR) {
                                      val popularSubCategories = PopularSubCategory.entries
                                      val selectedPopularPage = popularSubCategories
-                                         .indexOf(state.popularSubCategory)
+                                         .indexOf(popularSubCategory)
                                          .coerceAtLeast(0)
                                      val popularPagerState = rememberPagerState(
                                          initialPage = selectedPopularPage
@@ -1652,9 +1685,12 @@ fun HomeScreen(
                                          key = { index -> popularSubCategories[index].name }
                                      ) { subPage ->
                                          val subCategory = popularSubCategories[subPage]
-                                         val subCategoryState = state.popularCategoryStates[subCategory] ?: CategoryContent()
+                                         val subCategoryStateFlow = remember(viewModel, subCategory) {
+                                             viewModel.getPopularCategoryState(subCategory)
+                                         }
+                                         val subCategoryState by subCategoryStateFlow.collectAsStateWithLifecycle()
                                          val subCategoryGridState = popularGridStates[subCategory] ?: rememberLazyGridState()
-                                         val onSubCategoryLoadMore = if (subCategory == state.popularSubCategory) {
+                                         val onSubCategoryLoadMore = if (subCategory == popularSubCategory) {
                                              onLoadMoreCallback
                                          } else {
                                              {}
@@ -1670,10 +1706,11 @@ fun HomeScreen(
                                      renderHomeCategoryPage(
                                          categoryState,
                                          pageGridState,
-                                         state.popularSubCategory,
+                                         popularSubCategory,
                                          onLoadMoreCallback
                                      )
                                  }
+                             }
                              }
                              } // Close Box wrapper
                         }
@@ -1686,11 +1723,6 @@ fun HomeScreen(
         
         //  ===== Header Overlay (毛玻璃效果) =====
         //  Header 现在在外层 Box 内、hazeSource 外部，可以正确模糊内层内容
-        val isSkeletonState = state.isLoading && state.videos.isEmpty() && state.liveRooms.isEmpty()
-        val isErrorState = state.error != null && 
-            ((state.currentCategory == HomeCategory.LIVE && state.liveRooms.isEmpty()) ||
-             (state.currentCategory != HomeCategory.LIVE && state.videos.isEmpty()))
-
         //  [Restored] Header 始终显示，不再随 Loading/Error 状态隐藏
         //  这保证了 Tab 指示器状态的连续性，防止消失或重置
         val isFeedScrollInProgress by remember(activeGridState) {
@@ -1751,11 +1783,11 @@ fun HomeScreen(
             isHeaderCollapseEnabled = collapseSearchOnScroll,
             isTopTabsAutoCollapseEnabled = collapseTabsOnScroll,
             isTopTabsManualCollapseEnabled = false,
-            user = state.user,
+            user = user,
             onAvatarClick = {
                 when (
                     resolveHomeAvatarAction(
-                        isLoggedIn = state.user.isLogin,
+                        isLoggedIn = user.isLogin,
                         isHomeDrawerEnabled = isHomeDrawerEnabled
                     )
                 ) {
@@ -1766,7 +1798,7 @@ fun HomeScreen(
             },
             onSettingsClick = onSettingsClick,
             onInboxClick = onInboxClick,
-            topRightUnreadCount = state.messageUnreadCount,
+            topRightUnreadCount = messageUnreadCount,
             onSearchClick = onSearchClick,
             topCategories = localizedTopTabLabels,
             topCategoryKeys = topTabEntries.map { it.id },
@@ -1877,7 +1909,7 @@ fun HomeScreen(
         }
 
         //  [新增] 刷新撤销悬浮按钮（右下角，5秒后自动消失）
-        val undoVisible = state.undoAvailable && state.currentCategory == HomeCategory.RECOMMEND
+        val undoVisible = undoAvailable && currentCategory == HomeCategory.RECOMMEND
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -2020,7 +2052,7 @@ fun HomeScreen(
                 drawerContent = {
                     MineSideDrawer(
                         drawerState = drawerState,
-                        user = state.user,
+                        user = user,
                         onLogout = resolveHomeDrawerLogoutAction(
                             onLogout = onLogout,
                             onProfileClick = onProfileClick
@@ -2108,10 +2140,10 @@ fun HomeScreen(
     //  计算滚动偏移量用于头部动画 -  优化：量化减少重组
     val scrollOffset by remember {
         derivedStateOf {
-            val currentGridState = if (state.currentCategory == HomeCategory.POPULAR) {
-                popularGridStates[state.popularSubCategory]
+            val currentGridState = if (currentCategory == HomeCategory.POPULAR) {
+                popularGridStates[popularSubCategory]
             } else {
-                gridStates[state.currentCategory]
+                gridStates[currentCategory]
             }
             if (currentGridState == null) return@derivedStateOf 0f
             
@@ -2128,15 +2160,15 @@ fun HomeScreen(
 
     //  [性能优化] 图片预加载 - 提前加载即将显示的视频封面
     // 📉 [省流量] 省流量模式下禁用预加载
-    LaunchedEffect(state.currentCategory, state.popularSubCategory, isDataSaverActive, preloadAheadCount) {
+    LaunchedEffect(currentCategory, popularSubCategory, isDataSaverActive, preloadAheadCount) {
         // 📉 省流量模式下跳过预加载
         if (isDataSaverActive) return@LaunchedEffect
         if (preloadAheadCount <= 0) return@LaunchedEffect
         
-        val currentGridState = if (state.currentCategory == HomeCategory.POPULAR) {
-            popularGridStates[state.popularSubCategory]
+        val currentGridState = if (currentCategory == HomeCategory.POPULAR) {
+            popularGridStates[popularSubCategory]
         } else {
-            gridStates[state.currentCategory]
+            gridStates[currentCategory]
         } ?: return@LaunchedEffect
         
         snapshotFlow {
@@ -2145,11 +2177,10 @@ fun HomeScreen(
         }
             .distinctUntilChanged()
             .collect { (lastVisibleIndex, isScrollInProgress) ->
-                val videos = if (state.currentCategory == HomeCategory.POPULAR) {
-                    state.popularCategoryStates[state.popularSubCategory]?.videos ?: state.videos
-                } else {
-                    state.categoryStates[state.currentCategory]?.videos ?: state.videos
-                }
+                val videos = viewModel.getPreloadVideosSnapshot(
+                    category = currentCategory,
+                    popularSubCategory = popularSubCategory
+                )
                 val preloadRange = resolveHomeCoverPreloadRange(
                     isDataSaverActive = isDataSaverActive,
                     isScrollInProgress = isScrollInProgress,
@@ -2182,17 +2213,21 @@ fun HomeScreen(
     //  [已移除] 特殊分类（ANIME, MOVIE等）不再在首页切换，直接导航到独立页面
     
     //  [修复] 如果当前在直播-关注分类且列表为空，返回时先切换到热门，再切换到推荐
-    val isEmptyLiveFollowed = state.currentCategory == HomeCategory.LIVE && 
-                               state.liveSubCategory == LiveSubCategory.FOLLOWED &&
-                               state.liveRooms.isEmpty() && 
-                               !state.isLoading
+    val liveCategoryStateFlow = remember(viewModel) {
+        viewModel.getCategoryState(HomeCategory.LIVE)
+    }
+    val liveCategoryState by liveCategoryStateFlow.collectAsStateWithLifecycle()
+    val isEmptyLiveFollowed = currentCategory == HomeCategory.LIVE &&
+                               liveSubCategory == LiveSubCategory.FOLLOWED &&
+                               liveCategoryState.followedLiveRooms.isEmpty() &&
+                               !liveCategoryState.isLoading
     androidx.activity.compose.BackHandler(enabled = isEmptyLiveFollowed) {
         // 切换到热门直播
         viewModel.switchLiveSubCategory(LiveSubCategory.POPULAR)
     }
 
     //  [修复] 如果当前在直播分类（非关注空列表情况），返回时切换到推荐
-    val isLiveCategoryNotHome = state.currentCategory == HomeCategory.LIVE && !isEmptyLiveFollowed
+    val isLiveCategoryNotHome = currentCategory == HomeCategory.LIVE && !isEmptyLiveFollowed
     androidx.activity.compose.BackHandler(enabled = isLiveCategoryNotHome) {
         viewModel.switchCategory(HomeCategory.RECOMMEND)
     }
