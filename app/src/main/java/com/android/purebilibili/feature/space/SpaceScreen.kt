@@ -2026,18 +2026,11 @@ private fun SpaceHeader(
                         )
                     }
                     ipLocation?.let { location ->
-                        val locationColors = resolveSpaceLocationChipColors(MaterialTheme.colorScheme)
-                        Surface(
-                            shape = RoundedCornerShape(999.dp),
-                            color = locationColors.backgroundColor
-                        ) {
-                            Text(
-                                text = "IP属地：$location",
-                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
-                                fontSize = 12.sp,
-                                color = locationColors.textColor
-                            )
-                        }
+                        Text(
+                            text = "IP 属地 · $location",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.82f)
+                        )
                     }
                 }
             }
