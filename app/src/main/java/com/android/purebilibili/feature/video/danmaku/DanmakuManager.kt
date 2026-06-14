@@ -1201,13 +1201,12 @@ class DanmakuManager private constructor(
             override fun onIsPlayingChanged(isPlayerPlaying: Boolean) {
                 Log.w(TAG, " onIsPlayingChanged: isPlaying=$isPlayerPlaying, isEnabled=${config.isEnabled}, hasData=${cachedDanmakuList != null}")
 
-                when (
-                    resolveDanmakuActionForIsPlayingChange(
-                        isPlayerPlaying = isPlayerPlaying,
-                        danmakuEnabled = config.isEnabled,
-                        hasData = cachedDanmakuList != null
-                    )
-                ) {
+                val syncAction = resolveDanmakuActionForIsPlayingChange(
+                    isPlayerPlaying = isPlayerPlaying,
+                    danmakuEnabled = config.isEnabled,
+                    hasData = cachedDanmakuList != null
+                )
+                when (syncAction) {
                     DanmakuSyncAction.HardResync -> {
                         val position = exoPlayer.currentPosition
                         val shouldSuppressResync = shouldSuppressFollowupHardResync(position)
@@ -1232,6 +1231,12 @@ class DanmakuManager private constructor(
                         Log.w(TAG, " Danmaku HARD RESYNC at ${position}ms with frame sync")
                     }
                     DanmakuSyncAction.PauseOnly -> {
+                        // seek 后若经历缓冲或短暂停止，恢复时必须重新启动渲染引擎，不能抑制硬同步。
+                        lastExplicitSeekStartedPlayback =
+                            resolveExplicitSeekStartedPlaybackAfterSyncAction(
+                                explicitSeekStartedPlayback = lastExplicitSeekStartedPlayback,
+                                action = syncAction
+                            )
                         controller?.pause()
                         isPlaying = false
                         stopDriftSync()
@@ -1247,15 +1252,14 @@ class DanmakuManager private constructor(
             
             override fun onPlaybackStateChanged(playbackState: Int) {
                 Log.d(TAG, " onPlaybackStateChanged: state=$playbackState")
-                when (
-                    resolveDanmakuActionForPlaybackState(
-                        playbackState = playbackState,
-                        isPlayerPlaying = exoPlayer.isPlaying,
-                        danmakuEnabled = config.isEnabled,
-                        hasData = cachedDanmakuList != null,
-                        resumedFromBuffering = wasBufferingWhilePlaying
-                    )
-                ) {
+                val syncAction = resolveDanmakuActionForPlaybackState(
+                    playbackState = playbackState,
+                    isPlayerPlaying = exoPlayer.isPlaying,
+                    danmakuEnabled = config.isEnabled,
+                    hasData = cachedDanmakuList != null,
+                    resumedFromBuffering = wasBufferingWhilePlaying
+                )
+                when (syncAction) {
                     DanmakuSyncAction.HardResync -> {
                         val position = exoPlayer.currentPosition
                         val shouldSuppressResync = shouldSuppressFollowupHardResync(position)
@@ -1279,6 +1283,11 @@ class DanmakuManager private constructor(
                         }
                     }
                     DanmakuSyncAction.PauseOnly -> {
+                        lastExplicitSeekStartedPlayback =
+                            resolveExplicitSeekStartedPlaybackAfterSyncAction(
+                                explicitSeekStartedPlayback = lastExplicitSeekStartedPlayback,
+                                action = syncAction
+                            )
                         if (playbackState == Player.STATE_BUFFERING) {
                             wasBufferingWhilePlaying = isPlaying
                         } else {

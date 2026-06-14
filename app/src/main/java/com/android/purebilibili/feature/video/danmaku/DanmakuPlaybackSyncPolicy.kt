@@ -71,6 +71,18 @@ internal fun resolveDanmakuActionForIsPlayingChange(
     return if (danmakuEnabled && hasData) DanmakuSyncAction.HardResync else DanmakuSyncAction.None
 }
 
+internal fun resolveExplicitSeekStartedPlaybackAfterSyncAction(
+    explicitSeekStartedPlayback: Boolean?,
+    action: DanmakuSyncAction
+): Boolean? {
+    if (explicitSeekStartedPlayback == null) return null
+    return if (action == DanmakuSyncAction.PauseOnly) {
+        false
+    } else {
+        explicitSeekStartedPlayback
+    }
+}
+
 internal fun resolveDanmakuActionForPlaybackState(
     playbackState: Int,
     isPlayerPlaying: Boolean,

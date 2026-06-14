@@ -73,6 +73,22 @@ class DanmakuPlaybackSyncPolicyTest {
     }
 
     @Test
+    fun `explicit seek suppression should be invalidated after timeline pauses`() {
+        assertFalse(
+            resolveExplicitSeekStartedPlaybackAfterSyncAction(
+                explicitSeekStartedPlayback = true,
+                action = DanmakuSyncAction.PauseOnly
+            ) ?: true
+        )
+        assertTrue(
+            resolveExplicitSeekStartedPlaybackAfterSyncAction(
+                explicitSeekStartedPlayback = true,
+                action = DanmakuSyncAction.HardResync
+            ) ?: false
+        )
+    }
+
+    @Test
     fun `danmaku load result applies only to current cid and generation`() {
         assertTrue(
             shouldApplyDanmakuLoadResult(
