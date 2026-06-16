@@ -64,7 +64,7 @@ sealed class VideoLoadResult {
         val isFavorited: Boolean,
         val isLiked: Boolean,
         val coinCount: Int,
-        // [New] Duration (ms) from PlayUrlData
+        // 播放时长（毫秒）：优先播放地址，缺失时回退详情页分集时长。
         val duration: Long = 0,
         // [New] Codec Info for UI display
         val videoCodecId: Int = 0,
@@ -79,6 +79,21 @@ sealed class VideoLoadResult {
         val error: VideoLoadError,
         val canRetry: Boolean = true
     ) : VideoLoadResult()
+}
+
+internal fun resolveVideoLoadDurationMs(
+    playUrlDurationMs: Long,
+    info: ViewInfo
+): Long {
+    val safePlayUrlDurationMs = playUrlDurationMs.coerceAtLeast(0L)
+    if (safePlayUrlDurationMs > 0L) return safePlayUrlDurationMs
+
+    val pageDurationSeconds = info.pages
+        .firstOrNull { it.cid == info.cid }
+        ?.duration
+        ?: info.pages.firstOrNull()?.duration
+        ?: 0L
+    return pageDurationSeconds.coerceAtLeast(0L) * 1000L
 }
 
 /**
@@ -657,7 +672,10 @@ class VideoPlaybackUseCase(
                         isLiked = isLiked,
 
                         coinCount = coinCount,
-                        duration = playData.timelength,
+                        duration = resolveVideoLoadDurationMs(
+                            playUrlDurationMs = playData.timelength,
+                            info = info
+                        ),
                         aiAudio = playData.aiAudio,
                         curAudioLang = playData.curLanguage,
                         adaptiveDashSource = selection.adaptiveDashSource
