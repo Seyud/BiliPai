@@ -109,6 +109,7 @@ fun StoryVideoCard(
     // [新增] 获取圆角缩放比例
     val cornerRadiusScale = LocalCornerRadiusScale.current
     val cardCornerRadius = iOSCornerRadius.ExtraLarge * cornerRadiusScale  // 20.dp * scale
+    val coverShape = RoundedCornerShape(cardCornerRadius)
     val smallCornerRadius = iOSCornerRadius.Small * cornerRadiusScale - 2.dp  // 8.dp * scale
     val durationText = remember(video.duration) { FormatUtils.formatDuration(video.duration) }
     val showDurationOnCover = homeDurationStyle == HomeDurationStyle.OVERLAY_TEXT_ONLY
@@ -285,6 +286,9 @@ fun StoryVideoCard(
         Box(
             modifier = cardModifier
                 .fillMaxWidth()
+                .testTag("home_story_video_cover")
+                .aspectRatio(coverAspectRatio)
+                .clip(coverShape)
                 .background(MaterialTheme.colorScheme.surfaceVariant) // 封面占位色
         ) {
             // 封面比例由首页卡片样式统一配置。
@@ -297,10 +301,7 @@ fun StoryVideoCard(
                     .build(),
                 contentDescription = null,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("home_story_video_cover")
-                    .aspectRatio(coverAspectRatio)
-                    .clip(RoundedCornerShape(cardCornerRadius)),
+                    .fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
 
