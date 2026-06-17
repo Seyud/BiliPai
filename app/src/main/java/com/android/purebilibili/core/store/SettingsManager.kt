@@ -971,6 +971,8 @@ object SettingsManager {
     private val KEY_DYNAMIC_TAB_VISIBLE_TABS = stringPreferencesKey("dynamic_tab_visible_tabs")
     private val KEY_DYNAMIC_IMAGE_PREVIEW_TEXT_VISIBLE =
         booleanPreferencesKey("dynamic_image_preview_text_visible")
+    private val KEY_DYNAMIC_ALL_TAB_HORIZONTAL_USER_LIST_VISIBLE =
+        booleanPreferencesKey("dynamic_all_tab_horizontal_user_list_visible")
     private val KEY_LIVE_FAVORITE_TAGS = stringPreferencesKey("live_favorite_tags")
     
     //  [新增] 开屏壁纸
@@ -2551,6 +2553,17 @@ object SettingsManager {
     suspend fun setDynamicImagePreviewTextVisible(context: Context, visible: Boolean) {
         context.settingsDataStore.edit { prefs ->
             prefs[KEY_DYNAMIC_IMAGE_PREVIEW_TEXT_VISIBLE] = visible
+        }
+    }
+
+    fun getDynamicAllTabHorizontalUserListVisible(context: Context): Flow<Boolean> =
+        context.settingsDataStore.data.map { prefs ->
+            prefs[KEY_DYNAMIC_ALL_TAB_HORIZONTAL_USER_LIST_VISIBLE] ?: false
+        }
+
+    suspend fun setDynamicAllTabHorizontalUserListVisible(context: Context, visible: Boolean) {
+        context.settingsDataStore.edit { prefs ->
+            prefs[KEY_DYNAMIC_ALL_TAB_HORIZONTAL_USER_LIST_VISIBLE] = visible
         }
     }
 
@@ -5803,6 +5816,10 @@ object SettingsManager {
             BooleanShareablePreferenceDefinition(KEY_INCREMENTAL_TIMELINE_REFRESH, SettingsShareSection.NAVIGATION),
             BooleanShareablePreferenceDefinition(
                 KEY_DYNAMIC_IMAGE_PREVIEW_TEXT_VISIBLE,
+                SettingsShareSection.NAVIGATION
+            ),
+            BooleanShareablePreferenceDefinition(
+                KEY_DYNAMIC_ALL_TAB_HORIZONTAL_USER_LIST_VISIBLE,
                 SettingsShareSection.NAVIGATION
             ),
             IntShareablePreferenceDefinition(KEY_HOME_REFRESH_COUNT, SettingsShareSection.NAVIGATION)

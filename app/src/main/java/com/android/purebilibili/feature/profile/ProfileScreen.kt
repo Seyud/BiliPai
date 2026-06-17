@@ -77,6 +77,7 @@ import com.android.purebilibili.core.ui.AdaptiveScaffold
 import com.android.purebilibili.core.ui.AdaptiveTopAppBar
 import com.android.purebilibili.core.ui.AdaptiveTopAppBarStyle
 import com.android.purebilibili.core.ui.AdaptiveSplitLayout
+import com.android.purebilibili.core.ui.TopReadabilityChrome
 import com.android.purebilibili.core.ui.globalWallpaperAwareBackground
 import com.android.purebilibili.core.ui.rememberAppBackIcon
 import com.android.purebilibili.core.ui.rememberAppBookmarkIcon
@@ -428,20 +429,31 @@ fun ProfileScreen(
             AdaptiveScaffold(
                 containerColor = MaterialTheme.colorScheme.background,
                 topBar = {
-                    AdaptiveTopAppBar(
-                        title = "我的",
-                        style = AdaptiveTopAppBarStyle.CENTERED,
-                        navigationIcon = {
-                            IconButton(onClick = onBack) {
-                                Icon(rememberAppBackIcon(), contentDescription = "Back")
-                            }
-                        },
-                        actions = {
-                            IconButton(onClick = onSettingsClick) {
-                                Icon(rememberAppSettingsIcon(), contentDescription = "Settings")
-                            }
-                        }
-                    )
+                    Box {
+                        TopReadabilityChrome(
+                            height = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 64.dp,
+                            surfaceColor = MaterialTheme.colorScheme.background,
+                            surfaceAlpha = 0.86f
+                        )
+                        AdaptiveTopAppBar(
+                            title = "我的",
+                            style = AdaptiveTopAppBarStyle.CENTERED,
+                            navigationIcon = {
+                                IconButton(onClick = onBack) {
+                                    Icon(rememberAppBackIcon(), contentDescription = "Back")
+                                }
+                            },
+                            actions = {
+                                IconButton(onClick = onSettingsClick) {
+                                    Icon(rememberAppSettingsIcon(), contentDescription = "Settings")
+                                }
+                            },
+                            colors = TopAppBarDefaults.topAppBarColors(
+                                containerColor = Color.Transparent,
+                                scrolledContainerColor = Color.Transparent
+                            )
+                        )
+                    }
                 }
             ) { padding ->
                 Column(
@@ -521,8 +533,14 @@ fun ProfileScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .unifiedBlur(hazeState)
                         ) {
+                            TopReadabilityChrome(
+                                height = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 104.dp,
+                                surfaceColor = MaterialTheme.colorScheme.background,
+                                surfaceAlpha = 0.82f,
+                                hazeState = hazeState,
+                                hazeEnabled = true
+                            )
                             AdaptiveTopAppBar(
                                 title = "我的",
                                 largeTitle = "我的",

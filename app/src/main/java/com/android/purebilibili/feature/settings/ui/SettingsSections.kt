@@ -232,6 +232,7 @@ internal data class SettingsRootCategoryActions(
     val onFeedApiTypeChange: (com.android.purebilibili.core.store.SettingsManager.FeedApiType) -> Unit,
     val onIncrementalTimelineRefreshChange: (Boolean) -> Unit,
     val onDynamicImagePreviewTextVisibleChange: (Boolean) -> Unit,
+    val onDynamicAllTabHorizontalUserListVisibleChange: (Boolean) -> Unit,
     val onDynamicTabVisibilityChange: (String) -> Unit,
     val onHomeRefreshCountChange: (Int) -> Unit
 )
@@ -262,6 +263,7 @@ internal data class SettingsRootCategoryState(
     val feedApiType: com.android.purebilibili.core.store.SettingsManager.FeedApiType,
     val incrementalTimelineRefreshEnabled: Boolean,
     val dynamicImagePreviewTextVisible: Boolean,
+    val dynamicAllTabHorizontalUserListVisible: Boolean,
     val dynamicVisibleTabIds: Set<String>,
     val homeRefreshCount: Int
 )
@@ -302,16 +304,11 @@ internal fun SettingsRootCategoryContent(
 ) {
     Column {
         when (category) {
-            SettingsRootCategory.SOCIAL_SUPPORT -> FollowAuthorSection(
-                onTelegramClick = actions.onTelegramClick,
-                onTwitterClick = actions.onTwitterClick,
-                onDonateClick = actions.onDonateClick
-            )
-            SettingsRootCategory.INTERFACE_THEME -> SettingsSceneShortcutSection(
+            SettingsRootCategory.INTERFACE_HOME -> SettingsSceneShortcutSection(
                 shortcuts = listOf(
                     SettingsSceneShortcut(
                         target = SettingsSearchTarget.INTERFACE_THEME,
-                        title = "界面与主题",
+                        title = "界面与首页",
                         value = "UI 预设、主题、字体、DPI、动态图标与开屏",
                         onClick = actions.onAppearanceClick
                     ),
@@ -323,12 +320,12 @@ internal fun SettingsRootCategoryContent(
                     )
                 )
             )
-            SettingsRootCategory.HOME_FEED -> {
+            SettingsRootCategory.DYNAMIC_RECOMMEND -> {
                 SettingsSceneShortcutSection(
                     shortcuts = listOf(
                         SettingsSceneShortcut(
                             target = SettingsSearchTarget.HOME_FEED,
-                            title = "首页展示与壁纸",
+                            title = "首页、动态与推荐",
                             value = "展示样式、首页壁纸效果、推荐流卡片宽度",
                             onClick = actions.onAppearanceClick
                         )
@@ -342,44 +339,23 @@ internal fun SettingsRootCategoryContent(
                     onIncrementalTimelineRefreshChange = actions.onIncrementalTimelineRefreshChange,
                     dynamicImagePreviewTextVisible = state.dynamicImagePreviewTextVisible,
                     onDynamicImagePreviewTextVisibleChange = actions.onDynamicImagePreviewTextVisibleChange,
+                    dynamicAllTabHorizontalUserListVisible = state.dynamicAllTabHorizontalUserListVisible,
+                    onDynamicAllTabHorizontalUserListVisibleChange =
+                        actions.onDynamicAllTabHorizontalUserListVisibleChange,
                     dynamicVisibleTabIds = state.dynamicVisibleTabIds,
                     onDynamicTabVisibilityChange = actions.onDynamicTabVisibilityChange,
                     homeRefreshCount = state.homeRefreshCount,
                     onHomeRefreshCountChange = actions.onHomeRefreshCountChange
                 )
             }
-            SettingsRootCategory.NAVIGATION_LABELS -> SettingsSceneShortcutSection(
-                shortcuts = listOf(
-                    SettingsSceneShortcut(
-                        target = SettingsSearchTarget.NAVIGATION,
-                        title = "导航与标签",
-                        value = "底栏、顶部标签、平板侧边栏与底栏项目顺序",
-                        onClick = actions.onBottomBarClick
-                    )
-                )
-            )
-            SettingsRootCategory.PLAYBACK_QUALITY -> SettingsSceneShortcutSection(
+            SettingsRootCategory.PLAYBACK_INTERACTION -> SettingsSceneShortcutSection(
                 shortcuts = listOf(
                     SettingsSceneShortcut(
                         target = SettingsSearchTarget.PLAYBACK_QUALITY,
                         title = "播放与画质",
                         value = "解码、默认画质、自动最高画质、网络、省流量、字幕、倍速与连播",
                         onClick = actions.onPlaybackClick
-                    )
-                )
-            )
-            SettingsRootCategory.FULLSCREEN_GESTURE -> SettingsSceneShortcutSection(
-                shortcuts = listOf(
-                    SettingsSceneShortcut(
-                        target = SettingsSearchTarget.FULLSCREEN_GESTURE,
-                        title = "全屏与手势",
-                        value = "全屏方向、截图按钮、应用内截图、亮度/音量/进度手势",
-                        onClick = actions.onPlaybackClick
-                    )
-                )
-            )
-            SettingsRootCategory.INTERACTION_COMMENT -> SettingsSceneShortcutSection(
-                shortcuts = listOf(
+                    ),
                     SettingsSceneShortcut(
                         target = SettingsSearchTarget.INTERACTION_COMMENT,
                         title = "互动与评论",
@@ -388,25 +364,50 @@ internal fun SettingsRootCategoryContent(
                     )
                 )
             )
-            SettingsRootCategory.DATA_BACKUP -> DataStorageSection(
-                customDownloadPath = state.customDownloadPath,
-                customImageSavePath = state.customImageSavePath,
-                cacheSize = state.cacheSize,
-                onSettingsShareClick = actions.onSettingsShareClick,
-                onWebDavBackupClick = actions.onWebDavBackupClick,
-                onDownloadPathClick = actions.onDownloadPathClick,
-                onImageSavePathClick = actions.onImageSavePathClick,
-                onClearCacheClick = actions.onClearCacheClick
+            SettingsRootCategory.NAVIGATION_GESTURE -> SettingsSceneShortcutSection(
+                shortcuts = listOf(
+                    SettingsSceneShortcut(
+                        target = SettingsSearchTarget.NAVIGATION,
+                        title = "导航与标签",
+                        value = "底栏、顶部标签、平板侧边栏与底栏项目顺序",
+                        onClick = actions.onBottomBarClick
+                    ),
+                    SettingsSceneShortcut(
+                        target = SettingsSearchTarget.FULLSCREEN_GESTURE,
+                        title = "全屏与手势",
+                        value = "全屏方向、截图按钮、应用内截图、亮度/音量/进度手势",
+                        onClick = actions.onPlaybackClick
+                    )
+                )
             )
-            SettingsRootCategory.PRIVACY_PERMISSION -> PrivacySection(
-                privacyModeEnabled = state.privacyModeEnabled,
-                privacyContentAuthenticationEnabled = state.privacyContentAuthenticationEnabled,
-                onPrivacyModeChange = actions.onPrivacyModeChange,
-                onPrivacyContentAuthenticationChange = actions.onPrivacyContentAuthenticationChange,
-                onPermissionClick = actions.onPermissionClick,
-                onBlockedListClick = actions.onBlockedListClick
-            )
-            SettingsRootCategory.DIAGNOSTICS_DEVELOPER -> {
+            SettingsRootCategory.DATA_PRIVACY -> {
+                DataStorageSection(
+                    customDownloadPath = state.customDownloadPath,
+                    customImageSavePath = state.customImageSavePath,
+                    cacheSize = state.cacheSize,
+                    onSettingsShareClick = actions.onSettingsShareClick,
+                    onWebDavBackupClick = actions.onWebDavBackupClick,
+                    onDownloadPathClick = actions.onDownloadPathClick,
+                    onImageSavePathClick = actions.onImageSavePathClick,
+                    onClearCacheClick = actions.onClearCacheClick
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                PrivacySection(
+                    privacyModeEnabled = state.privacyModeEnabled,
+                    privacyContentAuthenticationEnabled = state.privacyContentAuthenticationEnabled,
+                    onPrivacyModeChange = actions.onPrivacyModeChange,
+                    onPrivacyContentAuthenticationChange = actions.onPrivacyContentAuthenticationChange,
+                    onPermissionClick = actions.onPermissionClick,
+                    onBlockedListClick = actions.onBlockedListClick
+                )
+            }
+            SettingsRootCategory.EXTENSION_ABOUT -> {
+                FollowAuthorSection(
+                    onTelegramClick = actions.onTelegramClick,
+                    onTwitterClick = actions.onTwitterClick,
+                    onDonateClick = actions.onDonateClick
+                )
+                Spacer(modifier = Modifier.height(12.dp))
                 SettingsSceneShortcutSection(
                     shortcuts = listOf(
                         SettingsSceneShortcut(
@@ -427,8 +428,7 @@ internal fun SettingsRootCategoryContent(
                     onPluginsClick = actions.onPluginsClick,
                     onExportLogsClick = actions.onExportLogsClick
                 )
-            }
-            SettingsRootCategory.ABOUT_SUPPORT -> {
+                Spacer(modifier = Modifier.height(12.dp))
                 AboutSection(
                     versionName = state.versionName,
                     easterEggEnabled = state.easterEggEnabled,
@@ -647,6 +647,8 @@ fun FeedApiSection(
     onIncrementalTimelineRefreshChange: (Boolean) -> Unit,
     dynamicImagePreviewTextVisible: Boolean,
     onDynamicImagePreviewTextVisibleChange: (Boolean) -> Unit,
+    dynamicAllTabHorizontalUserListVisible: Boolean,
+    onDynamicAllTabHorizontalUserListVisibleChange: (Boolean) -> Unit,
     dynamicVisibleTabIds: Set<String>,
     onDynamicTabVisibilityChange: (String) -> Unit,
     homeRefreshCount: Int,
@@ -710,6 +712,15 @@ fun FeedApiSection(
             subtitle = "打开图文动态图片时默认显示下方文字，可用右上角眼睛临时切换",
             checked = dynamicImagePreviewTextVisible,
             onCheckedChange = onDynamicImagePreviewTextVisibleChange,
+            iconTint = feedTint
+        )
+        SettingsDivider(startIndent = 66.dp)
+        FeedSwitchItem(
+            icon = visibilityIcon,
+            title = "全部动态显示 UP 主栏",
+            subtitle = "关闭后，“全部”tab 顶部不再弹出 UP 主横向栏，UP tab 仍可选择关注用户",
+            checked = dynamicAllTabHorizontalUserListVisible,
+            onCheckedChange = onDynamicAllTabHorizontalUserListVisibleChange,
             iconTint = feedTint
         )
         SettingsDivider(startIndent = 66.dp)

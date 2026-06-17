@@ -56,6 +56,7 @@ import com.android.purebilibili.core.ui.ComfortablePullToRefreshBox
 import com.android.purebilibili.core.ui.EmptyState
 import com.android.purebilibili.core.ui.LocalGlobalWallpaperBackdropVisible
 import com.android.purebilibili.core.ui.LoadingAnimation
+import com.android.purebilibili.core.ui.TopReadabilityChrome
 import com.android.purebilibili.core.ui.globalWallpaperAwareBackground
 import com.android.purebilibili.core.ui.rememberAppChevronUpIcon
 import com.android.purebilibili.core.ui.resolveGlobalWallpaperChromeColor
@@ -87,7 +88,6 @@ import io.github.alexzhirkevich.cupertino.icons.outlined.*
 import io.github.alexzhirkevich.cupertino.icons.filled.*
 import dev.chrisbanes.haze.HazeState
 import com.android.purebilibili.core.ui.blur.hazeSourceCompat
-import com.android.purebilibili.core.ui.blur.unifiedBlur
 import com.android.purebilibili.core.ui.blur.BlurStyles
 import com.android.purebilibili.core.ui.blur.currentUnifiedBlurIntensity
 import com.android.purebilibili.core.ui.blur.rememberRecoverableHazeState
@@ -144,6 +144,9 @@ fun DynamicScreen(
 
     val dynamicVisibleTabIds by SettingsManager.getDynamicTabVisibleTabs(context)
         .collectAsStateWithLifecycle(initialValue = defaultDynamicTabVisibleIds)
+    val dynamicAllTabHorizontalUserListVisible by SettingsManager
+        .getDynamicAllTabHorizontalUserListVisible(context)
+        .collectAsStateWithLifecycle(initialValue = false)
     val visibleTabs = remember(dynamicVisibleTabIds) {
         resolveDynamicVisibleTabs(dynamicVisibleTabIds)
     }
@@ -172,6 +175,17 @@ fun DynamicScreen(
 
     //  布局模式状态（侧边栏/横向）
     val displayMode by viewModel.displayMode.collectAsStateWithLifecycle()
+    val shouldShowHorizontalUserList = remember(
+        displayMode,
+        activeSelectedTab,
+        dynamicAllTabHorizontalUserListVisible
+    ) {
+        shouldShowDynamicHorizontalUserList(
+            isHorizontalMode = displayMode == DynamicDisplayMode.HORIZONTAL,
+            selectedTab = activeSelectedTab,
+            allTabHorizontalUserListVisible = dynamicAllTabHorizontalUserListVisible
+        )
+    }
 
     //  [Haze] 模糊状态
     val hazeState = rememberRecoverableHazeState()
@@ -202,9 +216,10 @@ fun DynamicScreen(
             )
         }
     }
-    val shouldCollapseHorizontalUserList by remember(listState, displayMode) {
+    val shouldCollapseHorizontalUserList by remember(listState, displayMode, shouldShowHorizontalUserList) {
         derivedStateOf {
-            displayMode == DynamicDisplayMode.HORIZONTAL &&
+            shouldShowHorizontalUserList &&
+                displayMode == DynamicDisplayMode.HORIZONTAL &&
                 shouldCollapseDynamicHorizontalUserList(
                     firstVisibleItemIndex = listState.firstVisibleItemIndex,
                     firstVisibleItemScrollOffset = listState.firstVisibleItemScrollOffset
@@ -661,7 +676,8 @@ fun DynamicScreen(
                                          statusBarHeight = statusBarHeight,
                                          topPaddingExtra = resolveDynamicListTopPaddingExtraDp(
                                              isHorizontalMode = true,
-                                             isHorizontalUserListCollapsed = shouldCollapseHorizontalUserList
+                                             isHorizontalUserListCollapsed = shouldCollapseHorizontalUserList,
+                                             shouldShowHorizontalUserList = shouldShowHorizontalUserList
                                          ).dp,
                                          bottomPadding = dynamicListBottomPadding,
                                          oldContentDividerIndex = oldContentDividerIndex,
@@ -711,44 +727,49 @@ fun DynamicScreen(
                                      globalWallpaperVisible = globalWallpaperVisible
                                  )
 
-                                 // 应用模糊效果到顶部整体区域
-                                 Column(
-                                     modifier = Modifier
-                                         .fillMaxWidth()
-                                         .then(if (globalWallpaperVisible) Modifier else Modifier.unifiedBlur(hazeState))
-                                         .background(headerColor)
-                                 ) {
-                                     // 顶栏 - 移除其自带的模糊，使用透明背景
-                                     DynamicTopBarWithTabs(
-                                         selectedTab = selectedVisibleTabIndex,
-                                         tabs = tabTitles,
-                                         onTabSelected = { visibleIndex ->
-                                             visibleTabs.getOrNull(visibleIndex)
-                                                 ?.let { viewModel.setSelectedTab(it.logicalIndex) }
-                                         },
-                                         displayMode = displayMode,
-                                         onDisplayModeChange = { viewModel.setDisplayMode(it) },
-                                         hazeState = null // 禁用内部模糊，由外层统一处理
+                                 Box(modifier = Modifier.fillMaxWidth()) {
+                                     TopReadabilityChrome(
+                                         height = resolveDynamicListTopPaddingExtraDp(
+                                             isHorizontalMode = true,
+                                             isHorizontalUserListCollapsed = shouldCollapseHorizontalUserList,
+                                             shouldShowHorizontalUserList = shouldShowHorizontalUserList
+                                         ).dp,
+                                         surfaceColor = headerColor,
+                                         surfaceAlpha = backgroundAlpha,
+                                         hazeState = hazeState,
+                                         hazeEnabled = !globalWallpaperVisible
                                      )
-
-                                     //  横向 UP 主列表
-                                     AnimatedVisibility(
-                                         visible = !shouldCollapseHorizontalUserList,
-                                         enter = expandVertically(animationSpec = tween(180)) + fadeIn(animationSpec = tween(180)),
-                                         exit = shrinkVertically(animationSpec = tween(180)) + fadeOut(animationSpec = tween(140))
-                                     ) {
-                                         HorizontalUserList(
-                                             users = followedUsers,
-                                             selectedUserId = selectedUserId,
-                                             listState = horizontalUserListState,
-                                             showHiddenUsers = showHiddenUsers,
-                                             hiddenCount = hiddenUserIds.size,
-                                             onUserClick = handleUserSelection,
-                                             onToggleShowHidden = { viewModel.toggleShowHiddenUsers() },
-                                             onTogglePin = { viewModel.togglePinUser(it) },
-                                             onToggleHidden = { viewModel.toggleHiddenUser(it) },
-                                             modifier = Modifier.fillMaxWidth()
+                                     Column(modifier = Modifier.fillMaxWidth()) {
+                                         DynamicTopBarWithTabs(
+                                             selectedTab = selectedVisibleTabIndex,
+                                             tabs = tabTitles,
+                                             onTabSelected = { visibleIndex ->
+                                                 visibleTabs.getOrNull(visibleIndex)
+                                                     ?.let { viewModel.setSelectedTab(it.logicalIndex) }
+                                             },
+                                             displayMode = displayMode,
+                                             onDisplayModeChange = { viewModel.setDisplayMode(it) },
+                                             hazeState = null
                                          )
+
+                                         AnimatedVisibility(
+                                             visible = shouldShowHorizontalUserList && !shouldCollapseHorizontalUserList,
+                                             enter = expandVertically(animationSpec = tween(180)) + fadeIn(animationSpec = tween(180)),
+                                             exit = shrinkVertically(animationSpec = tween(180)) + fadeOut(animationSpec = tween(140))
+                                         ) {
+                                             HorizontalUserList(
+                                                 users = followedUsers,
+                                                 selectedUserId = selectedUserId,
+                                                 listState = horizontalUserListState,
+                                                 showHiddenUsers = showHiddenUsers,
+                                                 hiddenCount = hiddenUserIds.size,
+                                                 onUserClick = handleUserSelection,
+                                                 onToggleShowHidden = { viewModel.toggleShowHiddenUsers() },
+                                                 onTogglePin = { viewModel.togglePinUser(it) },
+                                                 onToggleHidden = { viewModel.toggleHiddenUser(it) },
+                                                 modifier = Modifier.fillMaxWidth()
+                                             )
+                                         }
                                      }
                                  }
                              }

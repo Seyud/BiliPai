@@ -152,6 +152,36 @@ class FavoriteFolderAggregationPolicyTest {
     }
 
     @Test
+    fun `favorite folder preview prefers folder cover then loaded item cover`() {
+        val loadedItems = listOf(
+            VideoItem(pic = ""),
+            VideoItem(pic = "https://example.com/first-video.jpg")
+        )
+
+        assertEquals(
+            "https://example.com/folder.jpg",
+            resolveFavoriteFolderPreviewCover(
+                folder = FavFolder(cover = " https://example.com/folder.jpg "),
+                loadedItems = loadedItems
+            )
+        )
+        assertEquals(
+            "https://example.com/first-video.jpg",
+            resolveFavoriteFolderPreviewCover(
+                folder = FavFolder(cover = " "),
+                loadedItems = loadedItems
+            )
+        )
+        assertEquals(
+            null,
+            resolveFavoriteFolderPreviewCover(
+                folder = FavFolder(cover = " "),
+                loadedItems = listOf(VideoItem(pic = " "))
+            )
+        )
+    }
+
+    @Test
     fun `resolveFavoriteCollectionRoute carries collection owner name`() {
         val route = resolveFavoriteCollectionRoute(
             VideoItem(

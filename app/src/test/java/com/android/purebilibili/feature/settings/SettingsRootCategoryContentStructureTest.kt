@@ -101,10 +101,10 @@ class SettingsRootCategoryContentStructureTest {
             .substringBefore("@Composable\nfun SupportToolsSection(")
 
         assertTrue(contentBlock.contains("Column {\n        when (category)"))
-        assertTrue(contentBlock.contains("SettingsRootCategory.SOCIAL_SUPPORT -> FollowAuthorSection("))
-        assertTrue(contentBlock.contains("SettingsRootCategory.HOME_FEED -> {"))
-        assertTrue(contentBlock.contains("SettingsRootCategory.DIAGNOSTICS_DEVELOPER -> {"))
-        assertTrue(contentBlock.contains("SettingsRootCategory.ABOUT_SUPPORT -> {"))
+        assertTrue(contentBlock.contains("SettingsRootCategory.INTERFACE_HOME -> SettingsSceneShortcutSection("))
+        assertTrue(contentBlock.contains("SettingsRootCategory.DYNAMIC_RECOMMEND -> {"))
+        assertTrue(contentBlock.contains("SettingsRootCategory.DATA_PRIVACY -> {"))
+        assertTrue(contentBlock.contains("SettingsRootCategory.EXTENSION_ABOUT -> {"))
     }
 
     @Test
@@ -115,11 +115,11 @@ class SettingsRootCategoryContentStructureTest {
         ).first { it.exists() }.readText()
 
         val aboutBlock = source
-            .substringAfter("SettingsRootCategory.ABOUT_SUPPORT -> {")
+            .substringAfter("SettingsRootCategory.EXTENSION_ABOUT -> {")
             .substringBefore("SupportToolsSection(")
 
         assertTrue(aboutBlock.indexOf("AboutSection(") < aboutBlock.indexOf("ReleaseChannelPinnedCard("))
-        assertFalse(aboutBlock.contains("FollowAuthorSection("))
+        assertTrue(aboutBlock.contains("FollowAuthorSection("))
     }
 
     @Test

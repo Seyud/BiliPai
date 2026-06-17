@@ -60,6 +60,7 @@ import com.android.purebilibili.core.ui.AdaptiveTopAppBar
 import com.android.purebilibili.core.ui.AppShapes
 import com.android.purebilibili.core.ui.AppSurfaceTokens
 import com.android.purebilibili.core.ui.ContainerLevel
+import com.android.purebilibili.core.ui.TopReadabilityChrome
 import com.android.purebilibili.core.ui.rememberAppBackIcon
 import com.android.purebilibili.core.ui.adaptive.resolveDeviceUiProfile
 import com.android.purebilibili.core.ui.adaptive.resolveEffectiveMotionTier
@@ -131,6 +132,9 @@ fun SettingsScreen(
         .collectAsStateWithLifecycle(initialValue = defaultDynamicTabVisibleIds)
     val dynamicImagePreviewTextVisible by SettingsManager.getDynamicImagePreviewTextVisible(context)
         .collectAsStateWithLifecycle(initialValue = true)
+    val dynamicAllTabHorizontalUserListVisible by SettingsManager
+        .getDynamicAllTabHorizontalUserListVisible(context)
+        .collectAsStateWithLifecycle(initialValue = false)
     
     // Local UI State
     var showCacheDialog by remember { mutableStateOf(false) }
@@ -1033,6 +1037,12 @@ fun SettingsScreen(
                             SettingsManager.setDynamicImagePreviewTextVisible(context, visible)
                         }
                     },
+                    dynamicAllTabHorizontalUserListVisible = dynamicAllTabHorizontalUserListVisible,
+                    onDynamicAllTabHorizontalUserListVisibleChange = { visible ->
+                        scope.launch {
+                            SettingsManager.setDynamicAllTabHorizontalUserListVisible(context, visible)
+                        }
+                    },
                     dynamicVisibleTabIds = dynamicVisibleTabIds,
                     onDynamicTabVisibilityChange = { tabId ->
                         scope.launch {
@@ -1129,6 +1139,12 @@ fun SettingsScreen(
                     onDynamicImagePreviewTextVisibleChange = { visible ->
                         scope.launch {
                             SettingsManager.setDynamicImagePreviewTextVisible(context, visible)
+                        }
+                    },
+                    dynamicAllTabHorizontalUserListVisible = dynamicAllTabHorizontalUserListVisible,
+                    onDynamicAllTabHorizontalUserListVisibleChange = { visible ->
+                        scope.launch {
+                            SettingsManager.setDynamicAllTabHorizontalUserListVisible(context, visible)
                         }
                     },
                     dynamicVisibleTabIds = dynamicVisibleTabIds,
@@ -1258,6 +1274,8 @@ private fun MobileSettingsLayout(
     onIncrementalTimelineRefreshChange: (Boolean) -> Unit,
     dynamicImagePreviewTextVisible: Boolean,
     onDynamicImagePreviewTextVisibleChange: (Boolean) -> Unit,
+    dynamicAllTabHorizontalUserListVisible: Boolean,
+    onDynamicAllTabHorizontalUserListVisibleChange: (Boolean) -> Unit,
     dynamicVisibleTabIds: Set<String>,
     onDynamicTabVisibilityChange: (String) -> Unit,
     homeRefreshCount: Int,
@@ -1320,6 +1338,7 @@ private fun MobileSettingsLayout(
         onFeedApiTypeChange = onFeedApiTypeChange,
         onIncrementalTimelineRefreshChange = onIncrementalTimelineRefreshChange,
         onDynamicImagePreviewTextVisibleChange = onDynamicImagePreviewTextVisibleChange,
+        onDynamicAllTabHorizontalUserListVisibleChange = onDynamicAllTabHorizontalUserListVisibleChange,
         onDynamicTabVisibilityChange = onDynamicTabVisibilityChange,
         onHomeRefreshCountChange = onHomeRefreshCountChange
     )
@@ -1349,6 +1368,7 @@ private fun MobileSettingsLayout(
         feedApiType = feedApiType,
         incrementalTimelineRefreshEnabled = incrementalTimelineRefreshEnabled,
         dynamicImagePreviewTextVisible = dynamicImagePreviewTextVisible,
+        dynamicAllTabHorizontalUserListVisible = dynamicAllTabHorizontalUserListVisible,
         dynamicVisibleTabIds = dynamicVisibleTabIds,
         homeRefreshCount = homeRefreshCount
     )
@@ -1365,25 +1385,32 @@ private fun MobileSettingsLayout(
 
     AdaptiveScaffold(
         topBar = {
-            AdaptiveTopAppBar(
-                title = screenTitle,
-                navigationIcon = {
-                    IconButton(
-                        onClick = onBack
-                    ) {
-                        Icon(
-                            rememberAppBackIcon(),
-                            contentDescription = backLabel
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = AppSurfaceTokens.groupedListContainer(),
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
-                    actionIconContentColor = MaterialTheme.colorScheme.onSurface
+            Box {
+                TopReadabilityChrome(
+                    height = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 64.dp,
+                    surfaceColor = AppSurfaceTokens.groupedListContainer(),
+                    surfaceAlpha = 0.86f
                 )
-            )
+                AdaptiveTopAppBar(
+                    title = screenTitle,
+                    navigationIcon = {
+                        IconButton(
+                            onClick = onBack
+                        ) {
+                            Icon(
+                                rememberAppBackIcon(),
+                                contentDescription = backLabel
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                        actionIconContentColor = MaterialTheme.colorScheme.onSurface
+                    )
+                )
+            }
         },
         containerColor = AppSurfaceTokens.groupedListContainer(),
         contentWindowInsets = WindowInsets(0.dp)

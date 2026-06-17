@@ -32,6 +32,16 @@ internal fun resolveSubscribedFavoritePreviewCover(folder: FavFolder): String? {
     return folder.cover.trim().takeIf { it.isNotEmpty() }
 }
 
+internal fun resolveFavoriteFolderPreviewCover(
+    folder: FavFolder,
+    loadedItems: List<VideoItem>
+): String? {
+    folder.cover.trim().takeIf { it.isNotEmpty() }?.let { return it }
+    return loadedItems.firstNotNullOfOrNull { item ->
+        item.pic.trim().takeIf { it.isNotEmpty() }
+    }
+}
+
 internal fun mergeFavoriteFoldersForDisplay(
     ownedFolders: List<FavFolder>,
     subscribedFolders: List<FavFolder>

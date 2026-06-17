@@ -113,6 +113,8 @@ fun TabletSettingsLayout(
     onIncrementalTimelineRefreshChange: (Boolean) -> Unit,
     dynamicImagePreviewTextVisible: Boolean,
     onDynamicImagePreviewTextVisibleChange: (Boolean) -> Unit,
+    dynamicAllTabHorizontalUserListVisible: Boolean,
+    onDynamicAllTabHorizontalUserListVisibleChange: (Boolean) -> Unit,
     dynamicVisibleTabIds: Set<String>,
     onDynamicTabVisibilityChange: (String) -> Unit,
     homeRefreshCount: Int,
@@ -120,7 +122,7 @@ fun TabletSettingsLayout(
     
     modifier: Modifier = Modifier
 ) {
-    var selectedCategory by remember { mutableStateOf(SettingsRootCategory.INTERFACE_THEME) }
+    var selectedCategory by remember { mutableStateOf(SettingsRootCategory.INTERFACE_HOME) }
     val coroutineScope = rememberCoroutineScope()
     var pendingLanguageRestart by remember { mutableStateOf<AppLanguage?>(null) }
     val uiPreset = com.android.purebilibili.core.theme.LocalUiPreset.current
@@ -187,6 +189,7 @@ fun TabletSettingsLayout(
         onFeedApiTypeChange = onFeedApiTypeChange,
         onIncrementalTimelineRefreshChange = onIncrementalTimelineRefreshChange,
         onDynamicImagePreviewTextVisibleChange = onDynamicImagePreviewTextVisibleChange,
+        onDynamicAllTabHorizontalUserListVisibleChange = onDynamicAllTabHorizontalUserListVisibleChange,
         onDynamicTabVisibilityChange = onDynamicTabVisibilityChange,
         onHomeRefreshCountChange = onHomeRefreshCountChange
     )
@@ -216,6 +219,7 @@ fun TabletSettingsLayout(
         feedApiType = feedApiType,
         incrementalTimelineRefreshEnabled = incrementalTimelineRefreshEnabled,
         dynamicImagePreviewTextVisible = dynamicImagePreviewTextVisible,
+        dynamicAllTabHorizontalUserListVisible = dynamicAllTabHorizontalUserListVisible,
         dynamicVisibleTabIds = dynamicVisibleTabIds,
         homeRefreshCount = homeRefreshCount
     )

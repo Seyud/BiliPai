@@ -1100,6 +1100,7 @@ fun CommonListScreen(
                         FavoriteFolderChipRow(
                             folders = foldersState,
                             selectedFolderIndex = selectedFolderIndex,
+                            selectedFolderItems = selectedFolderUiState.items,
                             layout = favoriteHeaderLayout,
                             onFolderSelected = { index ->
                                 favoriteVm.switchFolder(index)
@@ -1261,6 +1262,7 @@ fun CommonListScreen(
 private fun FavoriteFolderChipRow(
     folders: List<com.android.purebilibili.data.model.response.FavFolder>,
     selectedFolderIndex: Int,
+    selectedFolderItems: List<com.android.purebilibili.data.model.response.VideoItem>,
     layout: CommonListFavoriteHeaderLayout,
     onFolderSelected: (Int) -> Unit
 ) {
@@ -1277,6 +1279,12 @@ private fun FavoriteFolderChipRow(
     ) {
         folders.forEachIndexed { index, folder ->
             val isSelected = index == selectedFolderIndex
+            val previewCover = remember(folder.cover, isSelected, selectedFolderItems) {
+                resolveFavoriteFolderPreviewCover(
+                    folder = folder,
+                    loadedItems = if (isSelected) selectedFolderItems else emptyList()
+                )
+            }
             Surface(
                 onClick = { onFolderSelected(index) },
                 shape = RoundedCornerShape(layout.folderChipMinHeightDp.dp),
@@ -1293,23 +1301,72 @@ private fun FavoriteFolderChipRow(
                         .padding(horizontal = layout.folderChipHorizontalPaddingDp.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = resolveFavoriteFolderTabLabel(folder),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.labelLarge.copy(
-                            fontSize = 13.sp,
-                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
-                        ),
-                        color = if (isSelected) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FavoriteFolderChipPreview(
+                            coverUrl = previewCover,
+                            selected = isSelected
+                        )
+                        Text(
+                            text = resolveFavoriteFolderTabLabel(folder),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.labelLarge.copy(
+                                fontSize = 13.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
+                            ),
+                            color = if (isSelected) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun FavoriteFolderChipPreview(
+    coverUrl: String?,
+    selected: Boolean
+) {
+    Box(
+        modifier = Modifier
+            .size(24.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .background(
+                if (selected) {
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.46f)
+                }
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        if (coverUrl != null) {
+            AsyncImage(
+                model = FormatUtils.fixImageUrl(coverUrl),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Icon(
+                imageVector = CupertinoIcons.Default.Folder,
+                contentDescription = null,
+                modifier = Modifier.size(15.dp),
+                tint = if (selected) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
+            )
         }
     }
 }
@@ -1793,8 +1850,8 @@ private fun FavoriteSubscribedFolderRow(
     val sharedElementRoute = remember(folder) {
         resolveSubscribedFavoriteCollectionRoute(folder)
     }
-    val previewCover = remember(folder.cover, folder.source) {
-        resolveSubscribedFavoritePreviewCover(folder)
+    val previewCover = remember(folder.cover) {
+        resolveFavoriteFolderPreviewCover(folder, emptyList())
     }
     Surface(
         modifier = Modifier

@@ -18,14 +18,24 @@ class DynamicScreenStatePolicyTest {
             184,
             resolveDynamicListTopPaddingExtraDp(
                 isHorizontalMode = true,
-                isHorizontalUserListCollapsed = false
+                isHorizontalUserListCollapsed = false,
+                shouldShowHorizontalUserList = true
             )
         )
         assertEquals(
             60,
             resolveDynamicListTopPaddingExtraDp(
                 isHorizontalMode = true,
-                isHorizontalUserListCollapsed = true
+                isHorizontalUserListCollapsed = true,
+                shouldShowHorizontalUserList = true
+            )
+        )
+        assertEquals(
+            60,
+            resolveDynamicListTopPaddingExtraDp(
+                isHorizontalMode = true,
+                isHorizontalUserListCollapsed = false,
+                shouldShowHorizontalUserList = false
             )
         )
         assertEquals(
@@ -33,6 +43,38 @@ class DynamicScreenStatePolicyTest {
             resolveDynamicListTopPaddingExtraDp(
                 isHorizontalMode = false,
                 isHorizontalUserListCollapsed = false
+            )
+        )
+    }
+
+    @Test
+    fun `all tab hides horizontal user list by default while up tab keeps it visible`() {
+        assertFalse(
+            shouldShowDynamicHorizontalUserList(
+                isHorizontalMode = true,
+                selectedTab = 0,
+                allTabHorizontalUserListVisible = false
+            )
+        )
+        assertTrue(
+            shouldShowDynamicHorizontalUserList(
+                isHorizontalMode = true,
+                selectedTab = 4,
+                allTabHorizontalUserListVisible = false
+            )
+        )
+        assertTrue(
+            shouldShowDynamicHorizontalUserList(
+                isHorizontalMode = true,
+                selectedTab = 0,
+                allTabHorizontalUserListVisible = true
+            )
+        )
+        assertFalse(
+            shouldShowDynamicHorizontalUserList(
+                isHorizontalMode = false,
+                selectedTab = 4,
+                allTabHorizontalUserListVisible = true
             )
         )
     }
