@@ -25,6 +25,20 @@ class VideoDetailScreenMethodSizeStructureTest {
     }
 
     @Test
+    fun videoDetailScreenKeepsInlineCollapseStateBehindOneHolder() {
+        val source = loadSource("app/src/main/java/com/android/purebilibili/feature/video/screen/VideoDetailScreen.kt")
+        val videoDetailBody = source
+            .substringAfter("fun VideoDetailScreen(")
+            .substringBefore("@OptIn(ExperimentalHazeMaterialsApi::class)")
+
+        assertTrue(videoDetailBody.contains("rememberInlinePortraitPlayerCollapseState()"))
+        assertFalse(videoDetailBody.contains("keepPlayerExpandedUntilNextScroll"))
+        assertFalse(videoDetailBody.contains("commentFirstVisibleItemIndex"))
+        assertFalse(videoDetailBody.contains("commentFirstVisibleItemScrollOffset"))
+        assertFalse(videoDetailBody.contains("onCommentScrollStateChange ="))
+    }
+
+    @Test
     fun videoDetailPlayerContainerUsesHomeSharedTransitionPolicy() {
         val source = loadSource("app/src/main/java/com/android/purebilibili/feature/video/screen/VideoDetailScreen.kt")
         val playerContainerSource = source

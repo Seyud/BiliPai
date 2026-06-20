@@ -217,6 +217,37 @@ import com.android.purebilibili.feature.video.viewmodel.PlayerToastPresentation
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
+@Stable
+private class InlinePortraitPlayerCollapseState {
+    var offsetPx by mutableFloatStateOf(0f)
+        private set
+
+    var restoreRequested by mutableStateOf(false)
+        private set
+
+    fun updateOffset(value: Float) {
+        offsetPx = value
+    }
+
+    fun reset() {
+        offsetPx = 0f
+        restoreRequested = false
+    }
+
+    fun beginScroll() {
+        restoreRequested = false
+    }
+
+    fun restore() {
+        offsetPx = 0f
+        restoreRequested = true
+    }
+}
+
+@Composable
+private fun rememberInlinePortraitPlayerCollapseState() =
+    remember { InlinePortraitPlayerCollapseState() }
+
 internal fun shouldHandleVideoDetailDisposeAsNavigationExit(
     isNavigatingToAudioMode: Boolean,
     isNavigatingToMiniMode: Boolean,
@@ -3156,9 +3187,7 @@ fun VideoDetailScreen(
                     )
                     var introFirstVisibleItemIndex by remember { mutableIntStateOf(0) }
                     var introFirstVisibleItemScrollOffset by remember { mutableIntStateOf(0) }
-                    var commentFirstVisibleItemIndex by remember { mutableIntStateOf(0) }
-                    var commentFirstVisibleItemScrollOffset by remember { mutableIntStateOf(0) }
-                    var keepPlayerExpandedUntilNextScroll by remember { mutableStateOf(false) }
+                    val inlinePlayerCollapseState = rememberInlinePortraitPlayerCollapseState()
                     val compactInlinePlayerForCommentTab =
                         shouldUseCompactInlinePortraitPlayerForCommentTab(
                             useOfficialInlinePortraitDetailExperience = useOfficialInlinePortraitDetailExperience,
@@ -3205,7 +3234,6 @@ fun VideoDetailScreen(
                             videoHeight.toPx()
                         }
                     }
-                    var playerHeightOffsetPx by remember { mutableFloatStateOf(0f) }
                     LaunchedEffect(
                         selectedVideoContentTabIndex,
                         compactInlinePlayerForCommentTab,
@@ -3213,18 +3241,19 @@ fun VideoDetailScreen(
                         portraitPlayerCollapseMode
                     ) {
                         if (!compactInlinePlayerForCommentTab && !compactInlinePlayerForIntroScroll) {
-                            playerHeightOffsetPx = 0f
+                            inlinePlayerCollapseState.reset()
                         }
                     }
                     TrackJankStateFlag(
                         stateName = "video_detail:player_swipe_collapse",
-                        isActive = inlinePortraitScrollEnabled && abs(playerHeightOffsetPx) > 0.5f
+                        isActive = inlinePortraitScrollEnabled &&
+                            abs(inlinePlayerCollapseState.offsetPx) > 0.5f
                     )
                     val isPlayerCollapsed by remember(inlinePortraitScrollEnabled, collapseRangePx) {
                         derivedStateOf {
                             resolveIsPlayerCollapsed(
                                 swipeHidePlayerEnabled = inlinePortraitScrollEnabled,
-                                playerHeightOffsetPx = playerHeightOffsetPx,
+                                playerHeightOffsetPx = inlinePlayerCollapseState.offsetPx,
                                 videoHeightPx = collapseRangePx
                             )
                         }
@@ -3232,34 +3261,38 @@ fun VideoDetailScreen(
                     
                     // 当设置关闭时，重置高度
                     LaunchedEffect(inlinePortraitScrollEnabled) {
-                        if (!inlinePortraitScrollEnabled) playerHeightOffsetPx = 0f
+                        if (!inlinePortraitScrollEnabled) inlinePlayerCollapseState.reset()
                     }
 
-                    val nestedScrollConnection = remember(inlinePortraitScrollEnabled, isPortraitFullscreen) {
+                    val nestedScrollConnection = remember(
+                        inlinePortraitScrollEnabled,
+                        isPortraitFullscreen,
+                        inlinePlayerCollapseState
+                    ) {
                         object : NestedScrollConnection {
                             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                                if (available.y != 0f) keepPlayerExpandedUntilNextScroll = false
+                                if (available.y != 0f) inlinePlayerCollapseState.beginScroll()
                                 val scrollUpdate = reduceVideoDetailPreScroll(
-                                    currentOffsetPx = playerHeightOffsetPx,
+                                    currentOffsetPx = inlinePlayerCollapseState.offsetPx,
                                     deltaPx = available.y,
                                     minOffsetPx = -collapseRangePx,
                                     inlinePortraitScrollEnabled = inlinePortraitScrollEnabled,
                                     isPortraitFullscreen = isPortraitFullscreen
                                 ) ?: return Offset.Zero
-                                playerHeightOffsetPx = scrollUpdate.nextOffsetPx
+                                inlinePlayerCollapseState.updateOffset(scrollUpdate.nextOffsetPx)
                                 return Offset(0f, scrollUpdate.consumedDeltaPx)
                             }
 
                             override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
-                                if (available.y != 0f) keepPlayerExpandedUntilNextScroll = false
+                                if (available.y != 0f) inlinePlayerCollapseState.beginScroll()
                                 val scrollUpdate = reduceVideoDetailPostScroll(
-                                    currentOffsetPx = playerHeightOffsetPx,
+                                    currentOffsetPx = inlinePlayerCollapseState.offsetPx,
                                     deltaPx = available.y,
                                     minOffsetPx = -collapseRangePx,
                                     inlinePortraitScrollEnabled = inlinePortraitScrollEnabled,
                                     isPortraitFullscreen = isPortraitFullscreen
                                 ) ?: return Offset.Zero
-                                playerHeightOffsetPx = scrollUpdate.nextOffsetPx
+                                inlinePlayerCollapseState.updateOffset(scrollUpdate.nextOffsetPx)
                                 return Offset(0f, scrollUpdate.consumedDeltaPx)
                             }
                         }
@@ -3275,7 +3308,11 @@ fun VideoDetailScreen(
                     //  播放器隐藏状态（用于动画）
                     //  当 playerHeightOffsetPx 为 -videoHeightPx 时，高度只剩 statusBarHeight
                     //  [Fix] 竖屏全屏模式下强制高度不受偏移影响
-                    val playerHeightOffset = if (isPortraitFullscreen) 0f else playerHeightOffsetPx
+                    val playerHeightOffset = if (isPortraitFullscreen) {
+                        0f
+                    } else {
+                        inlinePlayerCollapseState.offsetPx
+                    }
                     val collapseProgress = resolveVideoDetailCollapseProgress(
                         playerHeightOffsetPx = playerHeightOffset,
                         collapseRangePx = collapseRangePx,
@@ -3294,7 +3331,7 @@ fun VideoDetailScreen(
                     val effectiveCollapseProgress = resolveInlinePortraitPlayerCollapseProgress(
                         manualCollapseProgress = collapseProgress,
                         compactForCommentTabProgress = commentTabCollapseProgress,
-                        restoreRequested = keepPlayerExpandedUntilNextScroll
+                        restoreRequested = inlinePlayerCollapseState.restoreRequested
                     )
                     val expandedViewportHeight = if (useOfficialInlinePortraitDetailExperience) {
                         expandedPortraitInlineSpec.heightDp.dp
@@ -3594,10 +3631,7 @@ fun VideoDetailScreen(
                                     selectedFavoriteFolderIds = selectedFavoriteFolderIds,
                                     isSavingFavoriteFolders = isSavingFavoriteFolders,
                                     isPlayerCollapsed = isPlayerCollapsed,
-                                    onRestorePlayer = {
-                                        keepPlayerExpandedUntilNextScroll = true
-                                        playerHeightOffsetPx = 0f
-                                    },
+                                    onRestorePlayer = inlinePlayerCollapseState::restore,
                                     onBgmClick = onBgmClick,
                                     homeUpBadgesVisible = homeUpBadgesVisible,
                                     isVideoPlaying = isVideoPlaying,
@@ -3605,10 +3639,6 @@ fun VideoDetailScreen(
                                     onIntroScrollStateChange = { index, offset ->
                                         introFirstVisibleItemIndex = index
                                         introFirstVisibleItemScrollOffset = offset
-                                    },
-                                    onCommentScrollStateChange = { index, offset ->
-                                        commentFirstVisibleItemIndex = index
-                                        commentFirstVisibleItemScrollOffset = offset
                                     },
                                     openFavoriteFolders = openFavoriteFolders,
                                     navigateToUserSpaceFromVideo = navigateToUserSpaceFromVideo,
@@ -4503,7 +4533,6 @@ private fun VideoDetailPhoneSuccessContentLayer(
     isVideoPlaying: Boolean,
     onSelectedTabChange: (Int) -> Unit,
     onIntroScrollStateChange: (Int, Int) -> Unit,
-    onCommentScrollStateChange: (Int, Int) -> Unit,
     openFavoriteFolders: (VideoFavoriteEntryPoint) -> Unit,
     navigateToUserSpaceFromVideo: (Long) -> Unit,
     navigateToRelatedVideo: (String, android.os.Bundle?) -> Unit,
@@ -4721,7 +4750,6 @@ private fun VideoDetailPhoneSuccessContentLayer(
                             isVideoPlaying = isVideoPlaying,
                             onSelectedTabChange = onSelectedTabChange,
                             onIntroScrollStateChange = onIntroScrollStateChange,
-                            onCommentScrollStateChange = onCommentScrollStateChange,
                             bottomContentPadding = videoContentBottomPadding
                         )
 
