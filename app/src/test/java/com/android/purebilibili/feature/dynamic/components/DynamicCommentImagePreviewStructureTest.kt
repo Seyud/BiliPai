@@ -19,4 +19,18 @@ class DynamicCommentImagePreviewStructureTest {
         assertTrue(source.contains("resolveReplyPreviewTextContent(reply)"))
         assertTrue(source.contains("onImagePreview = { images, index, rect, textContent ->"))
     }
+
+    @Test
+    fun dynamicInlineSubReplies_showPicturesBeforeOpeningThread() {
+        val source = File(
+            "src/main/java/com/android/purebilibili/feature/dynamic/components/DynamicCommentSheet.kt"
+        ).readText()
+        val inlineSubReplyBlock = source
+            .substringAfter("visibleSubReplies.forEach { subReply ->")
+            .substringBefore("if (showInlineToggle)")
+
+        assertTrue(inlineSubReplyBlock.contains("subReply.content.pictures"))
+        assertTrue(inlineSubReplyBlock.contains("CommentPictures("))
+        assertTrue(inlineSubReplyBlock.contains("resolveReplyPreviewTextContent(subReply)"))
+    }
 }

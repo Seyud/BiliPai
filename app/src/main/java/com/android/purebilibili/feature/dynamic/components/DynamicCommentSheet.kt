@@ -422,25 +422,40 @@ private fun CommentItem(
                             val subEmoteMap = remember(subReply.content.emote) {
                                 subReply.content.emote?.mapValues { it.value.url } ?: emptyMap()
                             }
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Text(
-                                    text = "${subReply.member.uname}:",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Box(modifier = Modifier.weight(1f)) {
-                                    RichCommentText(
-                                        text = subReply.content.message,
+                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        text = "${subReply.member.uname}:",
                                         fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        emoteMap = subEmoteMap,
-                                        maxLines = 2
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Box(modifier = Modifier.weight(1f)) {
+                                        RichCommentText(
+                                            text = subReply.content.message,
+                                            fontSize = 12.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            emoteMap = subEmoteMap,
+                                            maxLines = 2
+                                        )
+                                    }
+                                }
+                                if (!subReply.content.pictures.isNullOrEmpty()) {
+                                    CommentPictures(
+                                        pictures = subReply.content.pictures,
+                                        onImageClick = { images, index, rect ->
+                                            onImagePreview(
+                                                images,
+                                                index,
+                                                rect,
+                                                resolveReplyPreviewTextContent(subReply)
+                                            )
+                                        }
                                     )
                                 }
                             }
