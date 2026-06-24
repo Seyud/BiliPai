@@ -2306,7 +2306,8 @@ fun AppNavigation(
                     onBack = { performSystemBackAction() },
                     modifier = Modifier.fillMaxSize(),
                     sharedTransitionScope = LocalSharedTransitionScope.current,
-                    visibleBottomBarRoutes = visibleBottomBarRoutes
+                    visibleBottomBarRoutes = visibleBottomBarRoutes,
+                    activeMainHostRoute = activeBottomTabRoute
                 ) { key ->
                     RenderNavigationContent(key)
                 }

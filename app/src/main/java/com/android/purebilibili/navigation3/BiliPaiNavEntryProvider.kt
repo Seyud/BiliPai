@@ -63,6 +63,7 @@ internal fun biliPaiNavEntryProvider(
     sourceMetadata: BiliPaiNavSourceMetadata,
     cardTransitionEnabled: Boolean = true,
     visibleBottomBarRoutes: Set<String> = emptySet(),
+    activeMainHostRoute: String? = null,
     content: @Composable (BiliPaiNavKey) -> Unit
 ): (BiliPaiNavKey) -> NavEntry<BiliPaiNavKey> {
     val entryMetadata: (BiliPaiNavKey) -> Map<String, Any> = { key ->
@@ -70,7 +71,8 @@ internal fun biliPaiNavEntryProvider(
             key = key,
             sourceMetadata = sourceMetadata,
             cardTransitionEnabled = cardTransitionEnabled,
-            visibleBottomBarRoutes = visibleBottomBarRoutes
+            visibleBottomBarRoutes = visibleBottomBarRoutes,
+            activeMainHostRoute = activeMainHostRoute
         )
     }
     return entryProvider(
@@ -159,7 +161,8 @@ internal fun biliPaiNavEntryMetadata(
     key: BiliPaiNavKey,
     sourceMetadata: BiliPaiNavSourceMetadata,
     cardTransitionEnabled: Boolean = true,
-    visibleBottomBarRoutes: Set<String> = emptySet()
+    visibleBottomBarRoutes: Set<String> = emptySet(),
+    activeMainHostRoute: String? = null
 ): Map<String, Any> {
     val transitions = resolveBiliPaiNavEntryRouteTransitions(
         key = key,
@@ -173,7 +176,8 @@ internal fun biliPaiNavEntryMetadata(
             defaultTransition = transitions.forward,
             fromRoute = initialState.biliPaiRouteBase(),
             toRoute = targetState.biliPaiRouteBase(),
-            visibleBottomBarRoutes = visibleBottomBarRoutes
+            visibleBottomBarRoutes = visibleBottomBarRoutes,
+            activeMainHostRoute = activeMainHostRoute
         )
         resolveBiliPaiNavContentTransform(transition)
     } + NavDisplay.popTransitionSpec {
@@ -184,7 +188,8 @@ internal fun biliPaiNavEntryMetadata(
             cardTransitionEnabled = cardTransitionEnabled,
             sharedElementPopReady = key is BiliPaiNavKey.SeasonSeriesDetail &&
                 key.sharedElementTransition,
-            sourceMetadata = sourceMetadata
+            sourceMetadata = sourceMetadata,
+            activeMainHostRoute = activeMainHostRoute
         )
         resolveBiliPaiNavContentTransform(transition)
     }
@@ -194,10 +199,12 @@ internal fun resolveBiliPaiNavEntryForwardRouteTransition(
     defaultTransition: BiliPaiNavRouteTransition,
     fromRoute: String?,
     toRoute: String?,
-    visibleBottomBarRoutes: Set<String>
+    visibleBottomBarRoutes: Set<String>,
+    activeMainHostRoute: String? = null
 ): BiliPaiNavRouteTransition {
     val normalizedFromRoute = normalizeBiliPaiNavEntryRouteBase(fromRoute)
     val normalizedToRoute = normalizeBiliPaiNavEntryRouteBase(toRoute)
+    val normalizedActiveMainHostRoute = normalizeBiliPaiNavEntryRouteBase(activeMainHostRoute)
     if (
         isSpaceRouteBase(normalizedToRoute) &&
         isMainHostOrVisibleBottomRoute(
@@ -211,7 +218,8 @@ internal fun resolveBiliPaiNavEntryForwardRouteTransition(
         defaultTransition == BiliPaiNavRouteTransition.FALLBACK &&
         isLightSiblingForwardRoute(
             fromRoute = normalizedFromRoute,
-            toRoute = normalizedToRoute
+            toRoute = normalizedToRoute,
+            activeMainHostRoute = normalizedActiveMainHostRoute
         )
     ) {
         return BiliPaiNavRouteTransition.LIGHT_SIBLING_FORWARD
@@ -225,11 +233,13 @@ internal fun resolveBiliPaiNavEntryPopRouteTransition(
     toRoute: String?,
     cardTransitionEnabled: Boolean = true,
     sharedElementPopReady: Boolean = false,
-    sourceMetadata: BiliPaiNavSourceMetadata
+    sourceMetadata: BiliPaiNavSourceMetadata,
+    activeMainHostRoute: String? = null
 ): BiliPaiNavRouteTransition {
     val normalizedFromRoute = normalizeBiliPaiNavEntryRouteBase(fromRoute)
     val normalizedToRoute = normalizeBiliPaiNavEntryRouteBase(toRoute)
     val normalizedSourceRoute = normalizeBiliPaiNavCardSourceRouteBase(sourceMetadata.sourceRoute)
+    val normalizedActiveMainHostRoute = normalizeBiliPaiNavEntryRouteBase(activeMainHostRoute)
     val videoToCardReturnTarget = normalizedFromRoute == VIDEO_ROUTE_BASE &&
         normalizedToRoute != null &&
         isCardReturnTargetRouteBase(normalizedToRoute)
@@ -254,7 +264,8 @@ internal fun resolveBiliPaiNavEntryPopRouteTransition(
         defaultTransition == BiliPaiNavRouteTransition.FALLBACK &&
         isLightSiblingPopRoute(
             fromRoute = normalizedFromRoute,
-            toRoute = normalizedToRoute
+            toRoute = normalizedToRoute,
+            activeMainHostRoute = normalizedActiveMainHostRoute
         )
     ) {
         return BiliPaiNavRouteTransition.LIGHT_SIBLING_POP
@@ -344,29 +355,39 @@ private fun isSpaceRouteBase(routeBase: String?): Boolean {
 
 private fun isLightSiblingForwardRoute(
     fromRoute: String?,
-    toRoute: String?
+    toRoute: String?,
+    activeMainHostRoute: String?
 ): Boolean {
     return isLightSiblingRoute(
         parentRoute = fromRoute,
-        childRoute = toRoute
+        childRoute = toRoute,
+        activeMainHostRoute = activeMainHostRoute
     )
 }
 
 private fun isLightSiblingPopRoute(
     fromRoute: String?,
-    toRoute: String?
+    toRoute: String?,
+    activeMainHostRoute: String?
 ): Boolean {
     return isLightSiblingRoute(
         parentRoute = toRoute,
-        childRoute = fromRoute
+        childRoute = fromRoute,
+        activeMainHostRoute = activeMainHostRoute
     )
 }
 
 private fun isLightSiblingRoute(
     parentRoute: String?,
-    childRoute: String?
+    childRoute: String?,
+    activeMainHostRoute: String?
 ): Boolean {
-    return when (parentRoute) {
+    val effectiveParentRoute = if (parentRoute == BiliPaiNavKey.MainHost.routeBase) {
+        activeMainHostRoute
+    } else {
+        parentRoute
+    }
+    return when (effectiveParentRoute) {
         SETTINGS_ROUTE_BASE -> childRoute in SETTINGS_LIGHT_SIBLING_ROUTE_BASES
         INBOX_ROUTE_BASE -> childRoute in MESSAGE_LIGHT_SIBLING_ROUTE_BASES
         LIVE_LIST_ROUTE_BASE -> childRoute in LIVE_LIGHT_SIBLING_ROUTE_BASES

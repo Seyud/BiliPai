@@ -242,6 +242,34 @@ class BiliPaiNavEntryProviderPolicyTest {
     }
 
     @Test
+    fun settingsInnerPagesFromActiveMainHostUseLightSiblingForwardTransition() {
+        assertEquals(
+            BiliPaiNavRouteTransition.LIGHT_SIBLING_FORWARD,
+            resolveBiliPaiNavEntryForwardRouteTransition(
+                defaultTransition = BiliPaiNavRouteTransition.FALLBACK,
+                fromRoute = BiliPaiNavKey.MainHost.routeBase,
+                toRoute = ScreenRoutes.AppearanceSettings.route,
+                visibleBottomBarRoutes = setOf(ScreenRoutes.Settings.route),
+                activeMainHostRoute = ScreenRoutes.Settings.route
+            )
+        )
+    }
+
+    @Test
+    fun settingsInnerPagesFromInactiveMainHostKeepFallbackTransition() {
+        assertEquals(
+            BiliPaiNavRouteTransition.FALLBACK,
+            resolveBiliPaiNavEntryForwardRouteTransition(
+                defaultTransition = BiliPaiNavRouteTransition.FALLBACK,
+                fromRoute = BiliPaiNavKey.MainHost.routeBase,
+                toRoute = ScreenRoutes.AppearanceSettings.route,
+                visibleBottomBarRoutes = setOf(ScreenRoutes.Settings.route),
+                activeMainHostRoute = ScreenRoutes.Home.route
+            )
+        )
+    }
+
+    @Test
     fun messageInnerPagesUseLightSiblingForwardTransition() {
         val messageChildren = listOf(
             "message/reply_me",

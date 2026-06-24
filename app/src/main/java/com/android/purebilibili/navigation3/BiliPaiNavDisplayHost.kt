@@ -40,6 +40,7 @@ internal fun BiliPaiNavDisplayHost(
     modifier: Modifier = Modifier,
     sharedTransitionScope: SharedTransitionScope? = null,
     visibleBottomBarRoutes: Set<String> = emptySet(),
+    activeMainHostRoute: String? = null,
     content: @Composable (BiliPaiNavKey) -> Unit
 ) {
     val safeBackStack = remember(backStack) {
@@ -70,11 +71,12 @@ internal fun BiliPaiNavDisplayHost(
             }
         }
     }
-    val entryProvider = remember(sourceMetadata, cardTransitionEnabled, visibleBottomBarRoutes, scopedContent) {
+    val entryProvider = remember(sourceMetadata, cardTransitionEnabled, visibleBottomBarRoutes, activeMainHostRoute, scopedContent) {
         biliPaiNavEntryProvider(
             sourceMetadata = sourceMetadata,
             cardTransitionEnabled = cardTransitionEnabled,
             visibleBottomBarRoutes = visibleBottomBarRoutes,
+            activeMainHostRoute = activeMainHostRoute,
             content = scopedContent
         )
     }
