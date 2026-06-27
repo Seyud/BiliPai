@@ -1303,6 +1303,10 @@ private fun PlaybackFullscreenGestureSettingsSection(
         .collectAsStateWithLifecycle(initialValue = PortraitPlayerCollapseMode.INTRO_ONLY)
     val portraitSwipeToFullscreenEnabled by com.android.purebilibili.core.store.SettingsManager
         .getPortraitSwipeToFullscreenEnabled(context).collectAsStateWithLifecycle(initialValue = true)
+    val directPortraitStoryEntry by com.android.purebilibili.core.store.SettingsManager
+        .getAutoPortraitFullscreen(context).collectAsStateWithLifecycle(initialValue = false)
+    val launchToPortraitFeedOnStartup by com.android.purebilibili.core.store.SettingsManager
+        .getLaunchToPortraitFeedOnStartup(context).collectAsStateWithLifecycle(initialValue = false)
     val centerSwipeToFullscreenEnabled by com.android.purebilibili.core.store.SettingsManager
         .getCenterSwipeToFullscreenEnabled(context).collectAsStateWithLifecycle(initialValue = true)
     val slideVolumeBrightnessEnabled by com.android.purebilibili.core.store.SettingsManager
@@ -1467,6 +1471,44 @@ private fun PlaybackFullscreenGestureSettingsSection(
                 scope.launch {
                     com.android.purebilibili.core.store.SettingsManager
                         .setPortraitSwipeToFullscreenEnabled(context, it)
+                }
+            },
+            iconTint = iOSTeal
+        )
+
+        IOSDivider()
+        IOSSwitchItem(
+            icon = rememberSettingsSemanticIcon(SettingsIconRole.PORTRAIT_SWIPE_FULLSCREEN),
+            title = "竖屏视频直达刷视频模式",
+            subtitle = if (directPortraitStoryEntry) {
+                "首页点击竖屏视频将直接进入竖屏刷视频，跳过详情页"
+            } else {
+                "关闭后竖屏视频仍从详情页进入"
+            },
+            checked = directPortraitStoryEntry,
+            onCheckedChange = {
+                scope.launch {
+                    com.android.purebilibili.core.store.SettingsManager
+                        .setAutoPortraitFullscreen(context, it)
+                }
+            },
+            iconTint = iOSTeal
+        )
+
+        IOSDivider()
+        IOSSwitchItem(
+            icon = rememberSettingsSemanticIcon(SettingsIconRole.PORTRAIT_SWIPE_FULLSCREEN),
+            title = "启动时进入竖屏视频流",
+            subtitle = if (launchToPortraitFeedOnStartup) {
+                "打开应用后直接进入竖屏刷视频，类似短视频 App"
+            } else {
+                "关闭后仍从首页进入应用"
+            },
+            checked = launchToPortraitFeedOnStartup,
+            onCheckedChange = {
+                scope.launch {
+                    com.android.purebilibili.core.store.SettingsManager
+                        .setLaunchToPortraitFeedOnStartup(context, it)
                 }
             },
             iconTint = iOSTeal

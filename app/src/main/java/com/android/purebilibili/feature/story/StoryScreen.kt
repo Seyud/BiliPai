@@ -26,6 +26,10 @@ import com.android.purebilibili.feature.video.viewmodel.PlayerViewModel
 @UnstableApi
 @Composable
 fun StoryScreen(
+    seedBvid: String = "",
+    seedCid: Long = 0L,
+    seedCover: String = "",
+    seedTitle: String = "",
     viewModel: StoryViewModel = viewModel(),
     playerViewModel: PlayerViewModel = viewModel(),
     isActive: Boolean = true,
@@ -36,8 +40,20 @@ fun StoryScreen(
     onRotateToLandscape: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val portraitFeed = remember(uiState.items) {
-        buildStoryPortraitFeed(uiState.items)
+    val seed = remember(seedBvid, seedCid, seedCover, seedTitle) {
+        if (seedBvid.isNotBlank()) {
+            StoryFeedSeed(
+                bvid = seedBvid,
+                cid = seedCid,
+                cover = seedCover,
+                title = seedTitle
+            )
+        } else {
+            null
+        }
+    }
+    val portraitFeed = remember(uiState.items, seed) {
+        buildStoryPortraitFeed(uiState.items, seed = seed)
     }
     var latestExitSnapshot by remember { mutableStateOf<StoryPortraitExitSnapshot?>(null) }
 

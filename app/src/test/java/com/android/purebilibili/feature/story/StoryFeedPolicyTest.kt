@@ -58,6 +58,27 @@ class StoryFeedPolicyTest {
     }
 
     @Test
+    fun buildStoryPortraitFeed_usesSeedVideoAsInitialEntry() {
+        val feed = buildStoryPortraitFeed(
+            items = listOf(
+                storyItem(id = 1L, aid = 100L, cid = 1100L, bvid = "BV_OTHER")
+            ),
+            seed = StoryFeedSeed(
+                bvid = "BV_SEED",
+                cid = 2200L,
+                cover = "https://img.test/seed.jpg",
+                title = "Seed"
+            )
+        )
+
+        val portraitFeed = assertNotNull(feed)
+        assertEquals("BV_SEED", portraitFeed.initialInfo.bvid)
+        assertEquals(2200L, portraitFeed.initialInfo.cid)
+        assertEquals("https://img.test/seed.jpg", portraitFeed.initialInfo.pic)
+        assertEquals(listOf("BV_OTHER"), portraitFeed.recommendations.map { it.bvid })
+    }
+
+    @Test
     fun buildStoryPortraitFeed_mapsRemainingPlayableStoriesAsRecommendations() {
         val feed = buildStoryPortraitFeed(
             listOf(

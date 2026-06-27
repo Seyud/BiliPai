@@ -280,7 +280,7 @@ enum class BottomNavItem(
         emptyList(),
         { Icon(CupertinoIcons.Filled.PlayCircle, contentDescription = null) },
         { Icon(CupertinoIcons.Outlined.PlayCircle, contentDescription = null) },
-        ScreenRoutes.Story.route
+        ScreenRoutes.Story.baseRoute
     ),
     HISTORY(
         "历史",

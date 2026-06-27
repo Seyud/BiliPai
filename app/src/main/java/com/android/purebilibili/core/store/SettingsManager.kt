@@ -751,7 +751,9 @@ data class PlayerInteractionSettings(
     val subtitleVerticalOffsetFraction: Float = 0.0f,
     val twoFingerVerticalSpeedEnabled: Boolean = false,
     val twoFingerHorizontalSpeedEnabled: Boolean = false,
-    val hiResLongPressCompatHintShown: Boolean = false
+    val hiResLongPressCompatHintShown: Boolean = false,
+    val directPortraitStoryEntry: Boolean = false,
+    val launchToPortraitFeedOnStartup: Boolean = false
 )
 
 private sealed interface ShareablePreferenceDefinition {
@@ -1353,7 +1355,9 @@ object SettingsManager {
             ),
             twoFingerVerticalSpeedEnabled = preferences[KEY_TWO_FINGER_VERTICAL_SPEED_ENABLED] ?: false,
             twoFingerHorizontalSpeedEnabled = preferences[KEY_TWO_FINGER_HORIZONTAL_SPEED_ENABLED] ?: false,
-            hiResLongPressCompatHintShown = preferences[KEY_HI_RES_LONG_PRESS_COMPAT_HINT_SHOWN] ?: false
+            hiResLongPressCompatHintShown = preferences[KEY_HI_RES_LONG_PRESS_COMPAT_HINT_SHOWN] ?: false,
+            directPortraitStoryEntry = preferences[KEY_AUTO_PORTRAIT_FULLSCREEN] ?: false,
+            launchToPortraitFeedOnStartup = preferences[KEY_LAUNCH_TO_PORTRAIT_FEED_ON_STARTUP] ?: false
         )
     }
 
@@ -4242,6 +4246,7 @@ object SettingsManager {
     
     private val KEY_PORTRAIT_FULLSCREEN_ENABLED = booleanPreferencesKey("portrait_fullscreen_enabled")
     private val KEY_AUTO_PORTRAIT_FULLSCREEN = booleanPreferencesKey("auto_portrait_fullscreen")
+    private val KEY_LAUNCH_TO_PORTRAIT_FEED_ON_STARTUP = booleanPreferencesKey("launch_to_portrait_feed_on_startup")
     private val KEY_VERTICAL_VIDEO_RATIO = floatPreferencesKey("vertical_video_ratio")
     
     // --- 竖屏全屏功能开关 (默认开启) ---
@@ -4268,6 +4273,15 @@ object SettingsManager {
 
     suspend fun setAutoPortraitFullscreen(context: Context, value: Boolean) {
         context.settingsDataStore.edit { preferences -> preferences[KEY_AUTO_PORTRAIT_FULLSCREEN] = value }
+    }
+
+    fun getLaunchToPortraitFeedOnStartup(context: Context): Flow<Boolean> = context.settingsDataStore.data
+        .map { preferences -> preferences[KEY_LAUNCH_TO_PORTRAIT_FEED_ON_STARTUP] ?: false }
+
+    suspend fun setLaunchToPortraitFeedOnStartup(context: Context, value: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[KEY_LAUNCH_TO_PORTRAIT_FEED_ON_STARTUP] = value
+        }
     }
     
     // --- 竖屏视频判断比例 (高度/宽度 > ratio 视为竖屏，默认 1.0) ---

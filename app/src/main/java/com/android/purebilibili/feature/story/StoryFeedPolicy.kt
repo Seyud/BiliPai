@@ -12,6 +12,30 @@ internal data class StoryPortraitFeed(
     val recommendations: List<RelatedVideo>
 )
 
+internal data class StoryFeedSeed(
+    val bvid: String,
+    val cid: Long,
+    val cover: String,
+    val title: String = ""
+) {
+    fun toViewInfo(): ViewInfo {
+        return ViewInfo(
+            bvid = bvid,
+            cid = cid,
+            title = title,
+            pic = cover,
+            pages = listOf(
+                Page(
+                    cid = cid,
+                    page = 1,
+                    part = title,
+                    duration = 0L
+                )
+            )
+        )
+    }
+}
+
 internal fun resolveNextStoryFeedAid(
     previousAid: Long,
     items: List<StoryItem>
@@ -49,8 +73,20 @@ internal fun mergeStoryFeedItems(
     return merged
 }
 
-internal fun buildStoryPortraitFeed(items: List<StoryItem>): StoryPortraitFeed? {
+internal fun buildStoryPortraitFeed(
+    items: List<StoryItem>,
+    seed: StoryFeedSeed? = null
+): StoryPortraitFeed? {
     val playableItems = items.mapNotNull(::toPlayableStoryItem)
+    if (seed != null && seed.bvid.isNotBlank()) {
+        val recommendations = playableItems
+            .filter { item -> item.playbackId != seed.bvid }
+            .map { item -> item.toRelatedVideo() }
+        return StoryPortraitFeed(
+            initialInfo = seed.toViewInfo(),
+            recommendations = recommendations
+        )
+    }
     val initial = playableItems.firstOrNull() ?: return null
     return StoryPortraitFeed(
         initialInfo = initial.toViewInfo(),

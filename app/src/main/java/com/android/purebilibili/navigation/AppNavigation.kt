@@ -441,6 +441,12 @@ fun AppNavigation(
         val appNavigationSettings by SettingsManager.getAppNavigationSettings(context).collectAsStateWithLifecycle(initialValue = AppNavigationSettings(),
             context = kotlin.coroutines.EmptyCoroutineContext
         )
+        val playerInteractionSettings by SettingsManager.getPlayerInteractionSettings(context)
+            .collectAsStateWithLifecycle(
+                initialValue = com.android.purebilibili.core.store.PlayerInteractionSettings(),
+                context = kotlin.coroutines.EmptyCoroutineContext
+            )
+        var hasLaunchedStartupPortraitFeed by rememberSaveable { mutableStateOf(false) }
         val bottomBarVisibilityMode = appNavigationSettings.bottomBarVisibilityMode
         val orderedVisibleTabIds = appNavigationSettings.orderedVisibleTabIds
         val visibleBottomBarItems = remember(orderedVisibleTabIds) {
@@ -692,7 +698,23 @@ fun AppNavigation(
             )
         }
         fun navigateToHomeVideoInNavigation3(request: HomeVideoClickRequest) {
-            when (val target = resolveHomeNavigationTarget(request)) {
+            when (
+                val target = resolveHomeNavigationTarget(
+                    request = request,
+                    directPortraitStoryEntry = playerInteractionSettings.directPortraitStoryEntry
+                )
+            ) {
+                is HomeNavigationTarget.PortraitStory -> {
+                    if (!canNavigate(false)) return
+                    isBottomBarVisible = false
+                    pushNavigation3Key(
+                        BiliPaiNavKey.Story(
+                            seedBvid = target.bvid,
+                            seedCid = target.cid,
+                            seedCover = target.coverUrl
+                        )
+                    )
+                }
                 is HomeNavigationTarget.Video -> {
                     val intent = resolveHomeVideoNavigationIntent(request)
                     if (intent != null) {
@@ -716,6 +738,18 @@ fun AppNavigation(
                 }
                 null -> Unit
             }
+        }
+        LaunchedEffect(
+            currentNavigation3Key,
+            firstLaunchShown,
+            playerInteractionSettings.launchToPortraitFeedOnStartup,
+            hasLaunchedStartupPortraitFeed
+        ) {
+            if (!firstLaunchShown || hasLaunchedStartupPortraitFeed) return@LaunchedEffect
+            if (!playerInteractionSettings.launchToPortraitFeedOnStartup) return@LaunchedEffect
+            if (currentNavigation3Key != BiliPaiNavKey.MainHost) return@LaunchedEffect
+            hasLaunchedStartupPortraitFeed = true
+            pushNavigation3Key(BiliPaiNavKey.Story())
         }
         val navigation3SourceMetadata = currentNavigation3SourceMetadata()
         val previousNavigation3Key = navigation3BackStack.getOrNull(navigation3BackStack.lastIndex - 1)
@@ -1136,7 +1170,7 @@ fun AppNavigation(
                     return when (item) {
                         BottomNavItem.HOME -> BiliPaiNavKey.Home
                         BottomNavItem.DYNAMIC -> BiliPaiNavKey.Dynamic
-                        BottomNavItem.STORY -> BiliPaiNavKey.Story
+                        BottomNavItem.STORY -> BiliPaiNavKey.Story()
                         BottomNavItem.HISTORY -> BiliPaiNavKey.History
                         BottomNavItem.PROFILE -> BiliPaiNavKey.Profile
                         BottomNavItem.FAVORITE -> BiliPaiNavKey.Favorite
@@ -1237,7 +1271,7 @@ fun AppNavigation(
                                 onWatchLaterClick = { pushNavigation3Route(ScreenRoutes.WatchLater.route) },
                                 onDownloadClick = { pushNavigation3Route(ScreenRoutes.DownloadList.route) },
                                 onInboxClick = { pushNavigation3Route(ScreenRoutes.Inbox.route) },
-                                onStoryClick = { pushNavigation3Route(ScreenRoutes.Story.route) },
+                                onStoryClick = { pushNavigation3Key(BiliPaiNavKey.Story()) },
                                 onSpaceClick = { mid ->
                                     pushNavigation3Route(ScreenRoutes.Space.createRoute(mid))
                                 },
@@ -1948,13 +1982,20 @@ fun AppNavigation(
                                     homeViewModel.refresh()
                                 }
                             )
-                        BiliPaiNavEntryContentRole.STORY -> com.android.purebilibili.feature.story.StoryScreen(
-                                isActive = true,
-                                onBack = { performSystemBackAction() },
-                                onVideoClick = { bvid, cid, _ -> navigateToVideoInNavigation3(bvid, cid, "") },
-                                onUserClick = { mid -> pushNavigation3Route(ScreenRoutes.Space.createRoute(mid)) },
-                                onSearchClick = { pushNavigation3Key(BiliPaiNavKey.Search) }
-                            )
+                        BiliPaiNavEntryContentRole.STORY -> {
+                                val storyKey = key as BiliPaiNavKey.Story
+                                com.android.purebilibili.feature.story.StoryScreen(
+                                    seedBvid = storyKey.seedBvid,
+                                    seedCid = storyKey.seedCid,
+                                    seedCover = storyKey.seedCover,
+                                    seedTitle = storyKey.seedTitle,
+                                    isActive = true,
+                                    onBack = { performSystemBackAction() },
+                                    onVideoClick = { bvid, cid, _ -> navigateToVideoInNavigation3(bvid, cid, "") },
+                                    onUserClick = { mid -> pushNavigation3Route(ScreenRoutes.Space.createRoute(mid)) },
+                                    onSearchClick = { pushNavigation3Key(BiliPaiNavKey.Search) }
+                                )
+                            }
                         BiliPaiNavEntryContentRole.AUDIO_MODE -> {
                                 val audioModeKey = key as BiliPaiNavKey.AudioMode
                                 val viewModel: com.android.purebilibili.feature.video.viewmodel.PlayerViewModel =

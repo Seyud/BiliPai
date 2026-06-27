@@ -101,6 +101,50 @@ class HomeVideoNavigationPolicyTest {
     }
 
     @Test
+    fun resolveHomeNavigationTarget_opensPortraitStoryWhenDirectEntryEnabledForVerticalVideo() {
+        val request = HomeVideoClickRequest(
+            bvid = "BV1portrait",
+            cid = 66L,
+            coverUrl = "https://img.test.com/portrait.jpg",
+            isVerticalVideo = true,
+            source = HomeVideoClickSource.GRID
+        )
+
+        val target = resolveHomeNavigationTarget(
+            request = request,
+            directPortraitStoryEntry = true
+        )
+
+        assertTrue(target is HomeNavigationTarget.PortraitStory)
+        assertEquals(
+            HomeNavigationTarget.PortraitStory(
+                bvid = "BV1portrait",
+                cid = 66L,
+                coverUrl = "https://img.test.com/portrait.jpg"
+            ),
+            target
+        )
+    }
+
+    @Test
+    fun resolveHomeNavigationTarget_keepsVideoRouteWhenDirectEntryDisabled() {
+        val request = HomeVideoClickRequest(
+            bvid = "BV1portrait",
+            cid = 66L,
+            coverUrl = "https://img.test.com/portrait.jpg",
+            isVerticalVideo = true,
+            source = HomeVideoClickSource.GRID
+        )
+
+        val target = resolveHomeNavigationTarget(
+            request = request,
+            directPortraitStoryEntry = false
+        )
+
+        assertTrue(target is HomeNavigationTarget.Video)
+    }
+
+    @Test
     fun resolveHomeNavigationTarget_keepsVideoRouteWhenBvidIsRealVideo() {
         val request = HomeVideoClickRequest(
             bvid = "BV1route",

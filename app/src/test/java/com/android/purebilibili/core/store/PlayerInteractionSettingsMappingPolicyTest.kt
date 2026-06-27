@@ -33,6 +33,8 @@ class PlayerInteractionSettingsMappingPolicyTest {
         assertFalse(result.hideVideoPageStatusBar)
         assertEquals(TabletCommentPanelWidthPreset.STANDARD, result.tabletCommentPanelWidthPreset)
         assertFalse(result.hiResLongPressCompatHintShown)
+        assertFalse(result.directPortraitStoryEntry)
+        assertFalse(result.launchToPortraitFeedOnStartup)
     }
 
     @Test

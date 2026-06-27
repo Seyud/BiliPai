@@ -119,7 +119,7 @@ internal fun shouldShowBottomBarForNavigation(
     shouldHideBottomBarOnTablet: Boolean,
     shouldDeferReveal: Boolean
 ): Boolean {
-    return activeRoute != ScreenRoutes.Story.route &&
+    return !activeRoute.orEmpty().startsWith("story") &&
         activeRoute in visibleBottomBarRoutes &&
         !useSideNavigation &&
         !shouldHideBottomBarOnTablet &&

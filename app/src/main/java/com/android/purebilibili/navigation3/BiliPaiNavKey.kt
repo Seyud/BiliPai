@@ -224,7 +224,12 @@ internal sealed interface BiliPaiNavKey : NavKey {
     }
 
     @Serializable
-    data object Story : BiliPaiNavKey {
+    data class Story(
+        val seedBvid: String = "",
+        val seedCid: Long = 0L,
+        val seedCover: String = "",
+        val seedTitle: String = ""
+    ) : BiliPaiNavKey {
         override val routeBase: String = "story"
     }
 

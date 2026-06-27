@@ -409,8 +409,8 @@ class AppTopLevelNavigationPolicyTest {
         )
         assertFalse(
             shouldShowBottomBarForNavigation(
-                activeRoute = ScreenRoutes.Story.route,
-                visibleBottomBarRoutes = defaultRoutes + ScreenRoutes.Story.route,
+                activeRoute = ScreenRoutes.Story.createRoute(bvid = "BV1test", cid = 1L),
+                visibleBottomBarRoutes = defaultRoutes + ScreenRoutes.Story.baseRoute,
                 useSideNavigation = false,
                 shouldHideBottomBarOnTablet = false,
                 shouldDeferReveal = false
