@@ -400,7 +400,9 @@ object CommentRepository {
             // 确保 buvid3 已初始化
             VideoRepository.ensureBuvid3()
 
-            if (!preferRestPaging && shouldTryGrpcPagedRequest(page = page, paginationOffset = paginationOffset)) {
+            val useRestSubReplyPaging = preferRestPaging ||
+                (page > 1 && paginationOffset.isNullOrBlank())
+            if (!useRestSubReplyPaging && shouldTryGrpcPagedRequest(page = page, paginationOffset = paginationOffset)) {
                 val grpcResult = CommentGrpcRepository.getDetailList(
                     oid = oid,
                     type = type,

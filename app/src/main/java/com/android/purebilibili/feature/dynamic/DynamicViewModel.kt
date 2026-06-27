@@ -1233,8 +1233,15 @@ class DynamicViewModel(application: Application) : AndroidViewModel(application)
         }
 
         val items = data.replies.orEmpty()
-        val remoteTotalCount = resolveSubReplyRemoteTotalCount(data)
-        val totalCount = resolveSubReplyLoadedTotalCount(rootReply, items.size, remoteTotalCount)
+        val remoteTotalCount = resolveSubReplyRemoteTotalCount(
+            data = data,
+            rootReply = rootReply
+        )
+        val totalCount = resolveSubReplyLoadedTotalCount(
+            rootReply = rootReply,
+            loadedReplyCount = items.size,
+            remoteReplyCount = remoteTotalCount
+        )
         val isEnd = resolveSubReplyPageEnd(
             cursorIsEnd = data.cursor.isEnd,
             fetchedReplyCount = items.size,
@@ -1302,10 +1309,15 @@ class DynamicViewModel(application: Application) : AndroidViewModel(application)
                 } else {
                     (current.items + newItems).distinctBy { it.rpid }
                 }
+                val remoteTotalCount = resolveSubReplyRemoteTotalCount(
+                    data = data,
+                    rootReply = current.rootReply
+                )
                 val totalCount = resolveSubReplyLoadedTotalCount(
                     rootReply = current.rootReply,
                     loadedReplyCount = updatedItems.size,
-                    remoteReplyCount = resolveSubReplyRemoteTotalCount(data)
+                    remoteReplyCount = remoteTotalCount,
+                    previousTotalCount = current.totalCount
                 )
                 val isEnd = resolveSubReplyPageEnd(
                     cursorIsEnd = data.cursor.isEnd,

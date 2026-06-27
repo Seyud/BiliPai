@@ -123,6 +123,58 @@ class CommentPaginationPolicyTest {
     }
 
     @Test
+    fun `sub reply page should end when loaded count reaches declared total`() {
+        assertTrue(
+            resolveSubReplyPageEnd(
+                cursorIsEnd = false,
+                fetchedReplyCount = 10,
+                loadedReplyCount = 200,
+                remoteReplyCount = 200,
+                requestedPage = 10
+            )
+        )
+    }
+
+    @Test
+    fun `sub reply loaded total count should not shrink across sparse pages`() {
+        assertEquals(
+            200,
+            resolveSubReplyLoadedTotalCount(
+                rootReply = ReplyItem(count = 200, rcount = 200),
+                loadedReplyCount = 80,
+                remoteReplyCount = 0,
+                previousTotalCount = 200
+            )
+        )
+    }
+
+    @Test
+    fun `sub reply remote total count prefers reply detail page count`() {
+        val data = ReplyData(
+            page = com.android.purebilibili.data.model.response.ReplyPage(count = 230),
+            root = ReplyItem(count = 12, rcount = 12)
+        )
+
+        assertEquals(230, resolveSubReplyRemoteTotalCount(data))
+    }
+
+    @Test
+    fun `sub reply remote total count falls back to root reply declared count`() {
+        val data = ReplyData(
+            cursor = ReplyCursor(allCount = 0),
+            root = ReplyItem(count = 0, rcount = 0)
+        )
+
+        assertEquals(
+            180,
+            resolveSubReplyRemoteTotalCount(
+                data = data,
+                rootReply = ReplyItem(count = 180, rcount = 180)
+            )
+        )
+    }
+
+    @Test
     fun `sub reply page should keep pagination open when detail count exceeds loaded items`() {
         assertFalse(
             resolveSubReplyPageEnd(

@@ -65,6 +65,7 @@ class CommentRepositoryImagePayloadTest {
         val source = File("src/main/java/com/android/purebilibili/data/repository/CommentRepository.kt").readText()
 
         assertTrue(source.contains("preferRestPaging: Boolean = false"))
-        assertTrue(source.contains("if (!preferRestPaging && shouldTryGrpcPagedRequest"))
+        assertTrue(source.contains("useRestSubReplyPaging"))
+        assertTrue(source.contains("if (!useRestSubReplyPaging && shouldTryGrpcPagedRequest"))
     }
 }

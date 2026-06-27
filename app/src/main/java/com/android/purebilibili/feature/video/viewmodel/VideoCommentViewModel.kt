@@ -140,10 +140,27 @@ data class SubReplyUiState(
     val dissolvingIds: ImmutableSet<Long> = persistentSetOf()
 )
 
+internal fun resolveSubReplyRemoteTotalCount(
+    data: ReplyData,
+    rootReply: ReplyItem? = null
+): Int {
+    // x/v2/reply/reply 文档中 data.page.count 才是二级评论总数。
+    if (data.page.count > 0) return data.page.count
+    return listOf(
+        data.root?.rcount ?: 0,
+        data.root?.count ?: 0,
+        data.cursor.allCount,
+        rootReply?.rcount ?: 0,
+        rootReply?.count ?: 0,
+        data.page.acount
+    ).filter { it > 0 }.maxOrNull() ?: 0
+}
+
 internal fun resolveSubReplyLoadedTotalCount(
     rootReply: ReplyItem?,
     loadedReplyCount: Int,
-    remoteReplyCount: Int
+    remoteReplyCount: Int,
+    previousTotalCount: Int = 0
 ): Int {
     val rootDeclaredCount = maxOf(
         rootReply?.count ?: 0,
@@ -151,22 +168,11 @@ internal fun resolveSubReplyLoadedTotalCount(
         rootReply?.replies.orEmpty().size
     )
     return maxOf(
+        previousTotalCount,
         rootDeclaredCount,
         remoteReplyCount,
         loadedReplyCount
     ).coerceAtLeast(0)
-}
-
-internal fun resolveSubReplyRemoteTotalCount(data: ReplyData): Int {
-    // x/v2/reply/reply 文档中 data.page.count 才是二级评论数；
-    // root.count 可能大于实际二级回复数，只能作为无 page/cursor 时的兜底。
-    return listOf(
-        data.page.count,
-        data.root?.rcount ?: 0,
-        data.cursor.allCount,
-        data.root?.count ?: 0,
-        data.page.acount
-    ).firstOrNull { it > 0 } ?: 0
 }
 
 internal fun resolveSubReplyPageEnd(
@@ -177,7 +183,11 @@ internal fun resolveSubReplyPageEnd(
     requestedPage: Int = 1,
     pageSize: Int = SUB_REPLY_PAGE_SIZE
 ): Boolean {
-    if (remoteReplyCount > loadedReplyCount.coerceAtLeast(0)) {
+    val safeLoadedCount = loadedReplyCount.coerceAtLeast(0)
+    if (remoteReplyCount > 0 && safeLoadedCount >= remoteReplyCount) {
+        return true
+    }
+    if (remoteReplyCount > safeLoadedCount) {
         // 楼中楼接口可能因审核或折叠导致中间页很稀疏，不能因单页为空提前结束。
         // 最多探测到外层声明总数对应的理论末页，避免异常计数导致无限请求。
         val safePageSize = pageSize.coerceAtLeast(1)
@@ -498,7 +508,10 @@ class VideoCommentViewModel : ViewModel() {
                 }
 
                 val items = data.replies.orEmpty()
-                val remoteTotalCount = resolveSubReplyRemoteTotalCount(data)
+                val remoteTotalCount = resolveSubReplyRemoteTotalCount(
+                    data = data,
+                    rootReply = rootReply
+                )
                 val totalCount = resolveSubReplyLoadedTotalCount(
                     rootReply = rootReply,
                     loadedReplyCount = items.size,
@@ -726,11 +739,15 @@ class VideoCommentViewModel : ViewModel() {
                 val newItems = data.replies ?: emptyList()
                 val updatedItems = if (page == 1) newItems else (current.items + newItems).distinctBy { it.rpid }
                 val nextOffset = data.grpcNextOffset.takeIf { it.isNotBlank() }
-                val remoteTotalCount = resolveSubReplyRemoteTotalCount(data)
+                val remoteTotalCount = resolveSubReplyRemoteTotalCount(
+                    data = data,
+                    rootReply = current.rootReply
+                )
                 val totalCount = resolveSubReplyLoadedTotalCount(
                     rootReply = current.rootReply,
                     loadedReplyCount = updatedItems.size,
-                    remoteReplyCount = remoteTotalCount
+                    remoteReplyCount = remoteTotalCount,
+                    previousTotalCount = current.totalCount
                 )
                 val isEnd = resolveSubReplyPageEnd(
                     cursorIsEnd = data.cursor.isEnd,

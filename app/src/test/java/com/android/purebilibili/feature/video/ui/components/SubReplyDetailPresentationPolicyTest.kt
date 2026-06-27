@@ -180,6 +180,19 @@ class SubReplyDetailPresentationPolicyTest {
     }
 
     @Test
+    fun `sub reply loaded total count keeps previous remote total on sparse page`() {
+        assertEquals(
+            120,
+            resolveSubReplyLoadedTotalCount(
+                rootReply = ReplyItem(count = 120, rcount = 120),
+                loadedReplyCount = 60,
+                remoteReplyCount = 0,
+                previousTotalCount = 120
+            )
+        )
+    }
+
+    @Test
     fun `conversation section title should include filtered reply count`() {
         assertEquals("对话共2条", resolveSubReplyConversationSectionTitle(replyCount = 2))
     }
