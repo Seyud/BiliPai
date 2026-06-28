@@ -2,6 +2,7 @@ package com.android.purebilibili.feature.home
 
 import com.android.purebilibili.core.theme.AndroidNativeVariant
 import com.android.purebilibili.core.theme.UiPreset
+import java.io.File
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -64,8 +65,28 @@ class HomePullRefreshUiPolicyTest {
     }
 
     @Test
+    fun `home screen routes miuix native refresh through adaptive container`() {
+        val source = loadSource("app/src/main/java/com/android/purebilibili/feature/home/HomeScreen.kt")
+
+        assertTrue(source.contains("AdaptivePullToRefreshBox("))
+        assertTrue(source.contains("HomePullRefreshIndicatorStyle.MIUIX_NATIVE -> Unit"))
+        assertTrue(source.contains("pullRefreshIndicatorStyle == HomePullRefreshIndicatorStyle.MIUIX_NATIVE"))
+        assertTrue(source.contains("PaddingValues(top = listTopPadding)"))
+    }
+
+    @Test
     fun `resolvePullRefreshThresholdDp returns comfortable trigger distance`() {
         assertEquals(44f, resolvePullRefreshThresholdDp(), 0.001f)
+    }
+
+    private fun loadSource(path: String): String {
+        val normalizedPath = path.removePrefix("app/")
+        val sourceFile = listOf(
+            File(path),
+            File(normalizedPath)
+        ).firstOrNull { it.exists() }
+        require(sourceFile != null) { "Cannot locate $path from ${File(".").absolutePath}" }
+        return sourceFile.readText()
     }
 
     @Test

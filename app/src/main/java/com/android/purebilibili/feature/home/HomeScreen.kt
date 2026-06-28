@@ -18,8 +18,6 @@ import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.lazy.staggeredgrid.*  // 🌊 瀑布流布局
 import com.kyant.backdrop.backdrops.layerBackdrop // [Fix] Import for modifier
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
-import top.yukonga.miuix.kmp.blur.layerBackdrop as miuixLayerBackdrop
-import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop as rememberMiuixLayerBackdrop
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -267,7 +265,6 @@ fun HomeScreen(
     val targetVideoItemState = remember { mutableStateOf<VideoItem?>(null) }
     var pendingNotInterestedVideo by remember { mutableStateOf<VideoItem?>(null) }
     val homeBackdrop = rememberLayerBackdrop()
-    val homeMiuixBackdrop = rememberMiuixLayerBackdrop()
 
     val coroutineScope = rememberCoroutineScope() // 用于双击回顶动画
     val globalScrollOffset = LocalHomeScrollOffset.current
@@ -576,8 +573,6 @@ fun HomeScreen(
             androidNativeVariant = androidNativeVariant
         )
     }
-    val usesMiuixNativePullRefresh =
-        pullRefreshIndicatorStyle == HomePullRefreshIndicatorStyle.MIUIX_NATIVE
 
     
     var showEasterEggDialog by remember { mutableStateOf(false) }
@@ -739,8 +734,6 @@ fun HomeScreen(
         baseCardAnimationEnabled,
         baseCardTransitionEnabled,
         baseIsDataSaverActive,
-        homeSettings.isHomeSearchLiquidGlassEnabled,
-        homeSettings.isTopBarLiquidGlassEnabled,
         homeSettings.androidNativeLiquidGlassEnabled
     ) {
         resolveHomePerformanceConfig(
@@ -748,7 +741,6 @@ fun HomeScreen(
             headerBlurEnabled = baseIsHeaderBlurEnabled,
             bottomBarBlurEnabled = baseIsBottomBarBlurEnabled,
             topBarLiquidGlassEnabled = homeSettings.isTopBarLiquidGlassEnabled,
-            homeSearchLiquidGlassEnabled = homeSettings.isHomeSearchLiquidGlassEnabled,
             bottomBarLiquidGlassEnabled = baseBottomBarLiquidGlassEnabled,
             androidNativeLiquidGlassEnabled = homeSettings.androidNativeLiquidGlassEnabled,
             cardAnimationEnabled = baseCardAnimationEnabled,
@@ -1174,19 +1166,18 @@ fun HomeScreen(
     var isHeaderVisible by rememberSaveable { mutableStateOf(true) }
     
     // Constants
-    val topChromeLiquidGlassEnabled = homePerformanceConfig.topBarLiquidGlassEnabled
-    val topTabStyle = remember(isBottomBarFloating, isHeaderBlurEnabled, topChromeLiquidGlassEnabled) {
+    val topTabStyle = remember(isBottomBarFloating, isHeaderBlurEnabled) {
         resolveTopTabStyle(
             isBottomBarFloating = isBottomBarFloating,
             isBottomBarBlurEnabled = isHeaderBlurEnabled,
-            isLiquidGlassEnabled = topChromeLiquidGlassEnabled
+            isLiquidGlassEnabled = false
         )
     }
-    val topChromeMaterialMode = remember(isHeaderBlurEnabled, isBottomBarBlurEnabled, topChromeLiquidGlassEnabled) {
+    val topChromeMaterialMode = remember(isHeaderBlurEnabled) {
         resolveHomeTopChromeMaterialMode(
             isHeaderBlurEnabled = isHeaderBlurEnabled,
-            isBottomBarBlurEnabled = isBottomBarBlurEnabled,
-            isLiquidGlassEnabled = topChromeLiquidGlassEnabled
+            isBottomBarBlurEnabled = false,
+            isLiquidGlassEnabled = false
         )
     }
     val searchBarHeightDp = resolveHomeTopSearchBarHeight(
@@ -1400,7 +1391,6 @@ fun HomeScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .layerBackdrop(homeBackdrop)
-                            .miuixLayerBackdrop(homeMiuixBackdrop)
                             // 首页使用 Pager + Lazy 子层，source 挂在外层容器更稳定。
                             .hazeSourceCompat(state = hazeState)
                     ) {
@@ -1447,37 +1437,29 @@ fun HomeScreen(
                         }
                         val categoryState by categoryStateFlow.collectAsStateWithLifecycle()
                         
-                        val isPageRefreshing = isRefreshing && currentCategory == category
+                        //  独立的 PullToRefreshState，避免所有页面共享一个状态导致冲突
                         val pullRefreshState = rememberPullToRefreshState()
-                        val pullDistanceFraction = if (usesMiuixNativePullRefresh) {
-                            0f
-                        } else {
-                            pullRefreshState.distanceFraction
-                        }
+                        val pullDistanceFraction = pullRefreshState.distanceFraction
+                        val isPageRefreshing = isRefreshing && currentCategory == category
                         var stablePullOffsetFraction by remember { mutableFloatStateOf(0f) }
 
-                        val resolvedStablePullOffsetFraction = if (usesMiuixNativePullRefresh) {
-                            0f
-                        } else {
-                            resolveStablePullContentOffsetFraction(
-                                distanceFraction = pullDistanceFraction,
-                                isRefreshing = isPageRefreshing,
-                                isStateAnimating = pullRefreshState.isAnimating,
-                                previousOffsetFraction = stablePullOffsetFraction,
-                                motionStyle = pullRefreshMotionStyle,
-                                indicatorStyle = pullRefreshIndicatorStyle
-                            )
-                        }
-                        if (!usesMiuixNativePullRefresh) {
-                            SideEffect {
-                                stablePullOffsetFraction = resolvedStablePullOffsetFraction
-                            }
+                        //  下拉物理由策略区分：MD3 截图式跟随当前手指距离回收，旧 iOS 弹性保留防抖滞后。
+                        val resolvedStablePullOffsetFraction = resolveStablePullContentOffsetFraction(
+                            distanceFraction = pullDistanceFraction,
+                            isRefreshing = isPageRefreshing,
+                            isStateAnimating = pullRefreshState.isAnimating,
+                            previousOffsetFraction = stablePullOffsetFraction,
+                            motionStyle = pullRefreshMotionStyle,
+                            indicatorStyle = pullRefreshIndicatorStyle
+                        )
+                        SideEffect {
+                            stablePullOffsetFraction = resolvedStablePullOffsetFraction
                         }
 
+                        //  使用 animateFloatAsState 包装偏移量
                         val animatedDragOffsetFraction by androidx.compose.animation.core.animateFloatAsState(
-                            targetValue = if (usesMiuixNativePullRefresh) 0f else resolvedStablePullOffsetFraction,
+                            targetValue = resolvedStablePullOffsetFraction,
                             animationSpec = if (
-                                usesMiuixNativePullRefresh ||
                                 shouldSnapPullOffsetToFinger(
                                     distanceFraction = pullDistanceFraction,
                                     isRefreshing = isPageRefreshing,
@@ -1492,18 +1474,14 @@ fun HomeScreen(
                             label = "pull_bounce"
                         )
 
+                        //  Defers calculation to graphicsLayer
                         val calculateDragOffset: androidx.compose.ui.unit.Density.() -> Float = remember(
                             animatedDragOffsetFraction,
-                            pullRefreshIndicatorStyle,
-                            usesMiuixNativePullRefresh
+                            pullRefreshIndicatorStyle
                         ) {
                             {
-                                if (usesMiuixNativePullRefresh) {
-                                    0f
-                                } else {
-                                    val maxPx = resolvePullContentMaxOffsetDp(pullRefreshIndicatorStyle).dp.toPx()
-                                    maxPx * animatedDragOffsetFraction
-                                }
+                                val maxPx = resolvePullContentMaxOffsetDp(pullRefreshIndicatorStyle).dp.toPx()
+                                maxPx * animatedDragOffsetFraction
                             }
                         }
                         
@@ -1527,12 +1505,17 @@ fun HomeScreen(
                                 }
                             },
                             state = pullRefreshState,
-                            contentPadding = PaddingValues(top = listTopPadding),
+                            contentPadding = if (
+                                pullRefreshIndicatorStyle == HomePullRefreshIndicatorStyle.MIUIX_NATIVE
+                            ) {
+                                PaddingValues(top = listTopPadding)
+                            } else {
+                                PaddingValues()
+                            },
                             modifier = Modifier.fillMaxSize(),
                              //  不同原生外观使用不同下拉刷新指示器，位移策略仍由 policy 统一控制。
                              indicator = {
                                 when (pullRefreshIndicatorStyle) {
-                                    HomePullRefreshIndicatorStyle.MIUIX_NATIVE -> Unit
                                     HomePullRefreshIndicatorStyle.MATERIAL_DEFAULT -> {
                                         PullToRefreshDefaults.Indicator(
                                             modifier = Modifier
@@ -1542,6 +1525,7 @@ fun HomeScreen(
                                             state = pullRefreshState
                                         )
                                     }
+                                    HomePullRefreshIndicatorStyle.MIUIX_NATIVE -> Unit
                                     HomePullRefreshIndicatorStyle.MD3_SCREENSHOT_HANDLE -> {
                                         val indicatorHeight = resolveMd3ScreenshotRefreshIndicatorHeightDp(
                                             progress = pullDistanceFraction,
@@ -1595,20 +1579,20 @@ fun HomeScreen(
                                 }
                              }
                         ) {
-                             // [物理优化] 内容容器应用下沉效果（Miuix 原生 PullToRefresh 自行处理位移）
+                             // [物理优化] 内容容器应用下沉效果
                              Box(
                                  modifier = Modifier
                                      .fillMaxSize()
                                      .zIndex(0f)
-                                     .then(
-                                         if (usesMiuixNativePullRefresh) {
-                                             Modifier
+                                     .graphicsLayer {
+                                         translationY = if (
+                                             pullRefreshIndicatorStyle == HomePullRefreshIndicatorStyle.MIUIX_NATIVE
+                                         ) {
+                                             0f
                                          } else {
-                                             Modifier.graphicsLayer {
-                                                 translationY = calculateDragOffset()
-                                             }
+                                             calculateDragOffset()
                                          }
-                                     )
+                                     }
                              ) {
                              if (category != HomeCategory.POPULAR && categoryState.isLoading && categoryState.videos.isEmpty() && categoryState.liveRooms.isEmpty()) {
                                  // Loading Skeleton per page
@@ -1929,7 +1913,6 @@ fun HomeScreen(
             pullProgress = 0f, // [Fix] Outer header doesn't track inner pull state
             pagerState = pagerState,
             backdrop = homeBackdrop,
-            miuixBackdrop = homeMiuixBackdrop,
             homeSettings = effectiveHomeSettings,
             topTabsVisible = resolveHomeTopTabsVisible(
                 isDelayedForCardSettle = delayTopTabsUntilCardSettled,

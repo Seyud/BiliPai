@@ -35,10 +35,11 @@ import com.android.purebilibili.core.ui.AppShapes
 import com.android.purebilibili.core.ui.AppSurfaceTokens
 import com.android.purebilibili.core.ui.ContainerLevel
 import com.android.purebilibili.core.ui.adaptiveSquircleBackground
+import com.android.purebilibili.core.ui.resolveCompactCapsuleChromeSpec
 import com.android.purebilibili.feature.home.components.BOTTOM_BAR_LIQUID_SEGMENTED_CONTROL_HEIGHT_DP
 import com.android.purebilibili.feature.home.components.BOTTOM_BAR_LIQUID_SEGMENTED_CONTROL_INDICATOR_HEIGHT_DP
 import com.android.purebilibili.feature.home.components.BottomBarLiquidSegmentedControl
-import top.yukonga.miuix.kmp.blur.Backdrop as MiuixBackdrop
+import com.kyant.backdrop.Backdrop
 import top.yukonga.miuix.kmp.basic.TabRow as MiuixTabRow
 import top.yukonga.miuix.kmp.basic.TabRowDefaults as MiuixTabRowDefaults
 
@@ -67,6 +68,15 @@ internal enum class IosSlidingSegmentedControlChrome {
     MD3_SEGMENTED
 }
 
+internal data class IosSlidingSegmentedControlRenderPolicy(
+    val itemWidthDp: Int,
+    val heightDp: Int,
+    val indicatorHeightDp: Int,
+    val labelFontSizeSp: Int,
+    val liquidGlassEffectsEnabled: Boolean,
+    val tapPressRefractionEnabled: Boolean
+)
+
 internal fun resolveIosSlidingSegmentedControlChrome(
     uiPreset: UiPreset,
     androidNativeLiquidGlassEnabled: Boolean
@@ -76,6 +86,21 @@ internal fun resolveIosSlidingSegmentedControlChrome(
     } else {
         IosSlidingSegmentedControlChrome.LIQUID_INDICATOR
     }
+}
+
+internal fun resolveIosSlidingSegmentedControlRenderPolicy(
+    itemCount: Int,
+    hasExternalBackdrop: Boolean
+): IosSlidingSegmentedControlRenderPolicy {
+    val compactChrome = resolveCompactCapsuleChromeSpec(UiPreset.IOS, AndroidNativeVariant.MATERIAL3)
+    return IosSlidingSegmentedControlRenderPolicy(
+        itemWidthDp = if (itemCount >= 4) 56 else 66,
+        heightDp = compactChrome.primaryHeightDp,
+        indicatorHeightDp = 30,
+        labelFontSizeSp = 13,
+        liquidGlassEffectsEnabled = hasExternalBackdrop,
+        tapPressRefractionEnabled = false
+    )
 }
 
 internal fun resolveIosSlidingSegmentedLiquidGlassRequest(
@@ -165,8 +190,10 @@ internal fun <T> IOSSlidingSegmentedControl(
     height: Dp = BOTTOM_BAR_LIQUID_SEGMENTED_CONTROL_HEIGHT_DP.dp,
     indicatorHeight: Dp = BOTTOM_BAR_LIQUID_SEGMENTED_CONTROL_INDICATOR_HEIGHT_DP.dp,
     labelFontSize: TextUnit = 14.sp,
-    miuixBackdrop: MiuixBackdrop? = null,
+    backdrop: Backdrop? = null,
     tapPressRefractionEnabled: Boolean = true,
+    containerColorOverride: Color? = null,
+    indicatorIdleSurfaceColorOverride: Color? = null,
     onSelectionChange: (T) -> Unit
 ) {
     if (options.isEmpty()) return
@@ -202,8 +229,10 @@ internal fun <T> IOSSlidingSegmentedControl(
         height = height,
         indicatorHeight = indicatorHeight,
         labelFontSize = labelFontSize,
-        miuixBackdrop = miuixBackdrop,
+        backdrop = backdrop,
         tapPressRefractionEnabled = tapPressRefractionEnabled,
+        containerColorOverride = containerColorOverride,
+        indicatorIdleSurfaceColorOverride = indicatorIdleSurfaceColorOverride,
         onSelectionChange = onSelectionChange
     )
 }
@@ -381,11 +410,33 @@ private fun <T> IOSSlidingSegmentedControlImpl(
     height: Dp = BOTTOM_BAR_LIQUID_SEGMENTED_CONTROL_HEIGHT_DP.dp,
     indicatorHeight: Dp = BOTTOM_BAR_LIQUID_SEGMENTED_CONTROL_INDICATOR_HEIGHT_DP.dp,
     labelFontSize: TextUnit = 14.sp,
-    miuixBackdrop: MiuixBackdrop? = null,
+    backdrop: Backdrop? = null,
     tapPressRefractionEnabled: Boolean = true,
+    containerColorOverride: Color? = null,
+    indicatorIdleSurfaceColorOverride: Color? = null,
     onSelectionChange: (T) -> Unit
 ) {
     val selectedIndex = resolveSelectionIndex(options = options, selectedValue = selectedValue)
+    val renderPolicy = resolveIosSlidingSegmentedControlRenderPolicy(
+        itemCount = options.size,
+        hasExternalBackdrop = backdrop != null
+    )
+    val usesDefaultBottomBarSizing =
+        height == BOTTOM_BAR_LIQUID_SEGMENTED_CONTROL_HEIGHT_DP.dp &&
+            indicatorHeight == BOTTOM_BAR_LIQUID_SEGMENTED_CONTROL_INDICATOR_HEIGHT_DP.dp &&
+            labelFontSize == 14.sp
+    val resolvedItemWidth = if (usesDefaultBottomBarSizing) {
+        renderPolicy.itemWidthDp.dp
+    } else {
+        null
+    }
+    val resolvedHeight = if (usesDefaultBottomBarSizing) renderPolicy.heightDp.dp else height
+    val resolvedIndicatorHeight =
+        if (usesDefaultBottomBarSizing) renderPolicy.indicatorHeightDp.dp else indicatorHeight
+    val resolvedLabelFontSize =
+        if (usesDefaultBottomBarSizing) renderPolicy.labelFontSizeSp.sp else labelFontSize
+    val resolvedTapPressRefractionEnabled =
+        if (usesDefaultBottomBarSizing) renderPolicy.tapPressRefractionEnabled else tapPressRefractionEnabled
     BottomBarLiquidSegmentedControl(
         items = options.map { it.label },
         selectedIndex = selectedIndex,
@@ -394,17 +445,17 @@ private fun <T> IOSSlidingSegmentedControlImpl(
                 onSelectionChange(option.value)
             }
         },
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier,
         enabled = enabled,
-        height = height,
-        indicatorHeight = indicatorHeight,
-        labelFontSize = labelFontSize,
-        miuixBackdrop = miuixBackdrop,
+        itemWidth = resolvedItemWidth,
+        height = resolvedHeight,
+        indicatorHeight = resolvedIndicatorHeight,
+        labelFontSize = resolvedLabelFontSize,
+        backdrop = backdrop,
         forceLiquidChrome = forceLiquidIndicator,
-        liquidGlassRequestedEnabled = resolveIosSlidingSegmentedLiquidGlassRequest(
-            forceLiquidIndicator = forceLiquidIndicator,
-            hasExternalBackdrop = miuixBackdrop != null
-        ),
-        tapPressRefractionEnabled = tapPressRefractionEnabled
+        liquidGlassEffectsEnabled = renderPolicy.liquidGlassEffectsEnabled,
+        tapPressRefractionEnabled = resolvedTapPressRefractionEnabled,
+        containerColorOverride = containerColorOverride,
+        indicatorIdleSurfaceColorOverride = indicatorIdleSurfaceColorOverride
     )
 }

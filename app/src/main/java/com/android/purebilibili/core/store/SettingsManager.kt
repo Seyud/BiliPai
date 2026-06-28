@@ -381,6 +381,28 @@ enum class HomeDurationStyle(val value: Int, val label: String) {
     }
 }
 
+enum class BottomBarLiquidGlassPreset(
+    val value: Int,
+    val label: String,
+    val description: String
+) {
+    BILIPAI_TUNED(
+        0,
+        "BiliPai 调校",
+        "保留当前多层折射、色散和指示器动效"
+    ),
+    IOS26_REFINED(
+        1,
+        "iOS 26 玻璃",
+        "厚边折射 + 顶光高亮环，无色散，沿用 BiliPai 指示器滑动与配色"
+    );
+
+    companion object {
+        fun fromValue(value: Int): BottomBarLiquidGlassPreset =
+            entries.find { it.value == value } ?: BILIPAI_TUNED
+    }
+}
+
 data class HomeSettings(
     val displayMode: Int = 0,              // 展示模式 (0=网格, 1=故事卡片)
     val isBottomBarFloating: Boolean = true,
@@ -394,6 +416,8 @@ data class HomeSettings(
     val isTopBarLiquidGlassEnabled: Boolean = false,
     val isHomeSearchLiquidGlassEnabled: Boolean = false,
     val isBottomBarLiquidGlassEnabled: Boolean = false,
+    val bottomBarLiquidGlassPreset: BottomBarLiquidGlassPreset =
+        BottomBarLiquidGlassPreset.BILIPAI_TUNED,
     val bottomBarInteractiveHighlightEnabled: Boolean = true,
     val isBottomBarSearchEnabled: Boolean = false,
     val bottomBarSearchAutoExpandMode: BottomBarSearchAutoExpandMode =

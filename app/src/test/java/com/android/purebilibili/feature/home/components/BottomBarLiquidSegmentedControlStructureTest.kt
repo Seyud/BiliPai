@@ -124,87 +124,6 @@ class BottomBarLiquidSegmentedControlStructureTest {
     }
 
     @Test
-    fun `inline segmented control uses same neutral idle indicator color as dock`() {
-        val themeColor = androidx.compose.ui.graphics.Color(0xFF00A1D6)
-        val inlineIndicator = resolveSegmentedControlIndicatorIdleSurfaceColor(
-            isDarkTheme = false
-        )
-        val dockedIndicator = resolveSegmentedControlIndicatorIdleSurfaceColor(
-            isDarkTheme = false
-        )
-
-        assertEquals(
-            resolveBottomBarIdleIndicatorSurfaceColor(darkTheme = false).red,
-            inlineIndicator.red,
-            0.001f
-        )
-        assertEquals(
-            resolveBottomBarIdleIndicatorSurfaceColor(darkTheme = false).red,
-            dockedIndicator.red,
-            0.001f
-        )
-        assertFalse(
-            resolveAndroidNativeIndicatorColor(themeColor = themeColor, darkTheme = false).red ==
-                inlineIndicator.red
-        )
-        assertTrue(shouldRenderSegmentedControlHiddenCaptureLayer(liquidGlassEnabled = true))
-        assertFalse(shouldRenderSegmentedControlHiddenCaptureLayer(liquidGlassEnabled = false))
-        assertTrue(shouldRenderSegmentedControlExportCapture(
-            liquidGlassEnabled = true,
-            hasExternalBackdrop = false
-        ))
-        assertTrue(shouldRenderSegmentedControlExportCapture(
-            liquidGlassEnabled = true,
-            hasExternalBackdrop = true
-        ))
-        assertFalse(shouldApplySegmentedControlExportThemeTint(hasExternalBackdrop = false))
-        assertTrue(shouldApplySegmentedControlExportThemeTint(hasExternalBackdrop = true))
-        assertFalse(
-            shouldApplySegmentedControlCaptureBackdropEffects(
-                hasExternalBackdrop = false,
-                drawCaptureBackdropEffects = true,
-                liquidGlassEnabled = true
-            )
-        )
-        assertTrue(
-            shouldApplySegmentedControlCaptureBackdropEffects(
-                hasExternalBackdrop = true,
-                drawCaptureBackdropEffects = true,
-                liquidGlassEnabled = true
-            )
-        )
-    }
-
-    @Test
-    fun `feed scroll suppresses segmented indicator backdrop until direct interaction`() {
-        assertFalse(
-            shouldDrawSegmentedControlIndicatorBackdrop(
-                liquidGlassEnabled = true,
-                motionProgress = 0.5f,
-                hasExternalBackdrop = false,
-                isFeedScrollInProgress = true,
-                isInteractionActive = false
-            )
-        )
-        assertTrue(
-            shouldDrawSegmentedControlIndicatorBackdrop(
-                liquidGlassEnabled = true,
-                motionProgress = 0.5f,
-                hasExternalBackdrop = false,
-                isFeedScrollInProgress = true,
-                isInteractionActive = true
-            )
-        )
-        assertFalse(
-            shouldRenderSegmentedControlIndicatorContentBackdrop(
-                liquidGlassEnabled = true,
-                isFeedScrollInProgress = true,
-                isInteractionActive = false
-            )
-        )
-    }
-
-    @Test
     fun `segmented indicator only samples hidden tab backdrop while sliding without external backdrop`() {
         assertFalse(
             shouldDrawSegmentedControlIndicatorBackdrop(
@@ -237,24 +156,12 @@ class BottomBarLiquidSegmentedControlStructureTest {
     }
 
     @Test
-    fun `android native inline segmented control keeps liquid pill when global glass is enabled`() {
-        assertEquals(
-            SegmentedControlChromeStyle.LIQUID_PILL,
-            resolveSegmentedControlChromeStyle(
-                uiPreset = UiPreset.MD3,
-                androidNativeLiquidGlassEnabled = true,
-                preferInlineContentStyle = true
-            )
-        )
-    }
-
-    @Test
-    fun `android native inline segmented control still uses underline when global glass is disabled`() {
+    fun `android native inline segmented control avoids liquid pill when global glass is enabled`() {
         assertEquals(
             SegmentedControlChromeStyle.ANDROID_NATIVE_UNDERLINE,
             resolveSegmentedControlChromeStyle(
                 uiPreset = UiPreset.MD3,
-                androidNativeLiquidGlassEnabled = false,
+                androidNativeLiquidGlassEnabled = true,
                 preferInlineContentStyle = true
             )
         )
@@ -281,25 +188,27 @@ class BottomBarLiquidSegmentedControlStructureTest {
         assertTrue(source.contains("BottomBarMotionProfile.ANDROID_NATIVE_FLOATING"))
         assertFalse(source.contains("BottomBarMotionProfile.IOS_FLOATING"))
         assertTrue(source.contains("resolveBottomBarRefractionMotionProfile("))
-        assertTrue(source.contains(".kernelSuMiuixFloatingDockSurface("))
+        assertTrue(source.contains(".kernelSuFloatingDockSurface("))
         assertTrue(source.contains("blurRadius = androidNativeTuning.shellBlurRadiusDp.dp"))
-        assertTrue(source.contains("miuixBlur(4.dp.toPx(), 4.dp.toPx())"))
+        assertTrue(source.contains("blur(androidNativeTuning.shellBlurRadiusDp.dp.toPx())"))
         assertFalse(source.contains("blur(8.dp.toPx())"))
         assertFalse(source.contains(".border("))
         assertTrue(source.contains("BOTTOM_BAR_LIQUID_SEGMENTED_CONTROL_HEIGHT_DP = 58"))
         assertTrue(source.contains("BOTTOM_BAR_LIQUID_SEGMENTED_CONTROL_INDICATOR_HEIGHT_DP = 56"))
         assertTrue(source.contains("dragState.dragOffset / itemWidthPx"))
         assertTrue(source.contains("resolveBottomBarItemMotionVisual("))
-        assertTrue(source.contains("rememberMiuixCombinedBackdrop("))
-        assertTrue(source.contains("miuixDrawBackdrop("))
+        assertFalse(source.contains("rememberCombinedBackdrop("))
+        assertTrue(source.contains("drawBackdrop("))
         assertTrue(source.contains("resolveBottomBarBackdropPresetProgress("))
         assertTrue(source.contains("resolveBottomBarBackdropPresetCaptureLens("))
         assertTrue(source.contains("resolveBottomBarBackdropPresetIndicatorLens("))
         assertTrue(source.contains("resolveBottomBarLiquidGlassHighlightAlpha("))
-        assertFalse(source.contains("Highlight.Default.copy(alpha = captureHighlightAlpha)"))
-        assertFalse(source.contains("Shadow(alpha = indicatorGlowAlpha)"))
+        assertTrue(source.contains("Highlight.Default.copy(alpha = captureHighlightAlpha)"))
+        assertTrue(source.contains("Shadow(alpha = indicatorGlowAlpha)"))
+        assertTrue(source.contains("InnerShadow("))
+        assertTrue(source.contains("rememberBottomBarClickPulseTransform("))
         assertTrue(source.contains("rememberBottomBarIndicatorDragScaleProgress("))
-        assertTrue(source.contains("KernelSuMiuixBottomBarIndicatorLayer("))
+        assertTrue(source.contains("KernelSuBottomBarIndicatorLayer("))
         assertTrue(source.contains("indicatorLayerScaleProgress = indicatorLayerScaleProgress"))
         assertFalse(source.contains("dragScaleProgress = maxOf(motionProgress, tapPressProgress)"))
         assertFalse(source.contains("val indicatorScale = lerp(1f, 78f / 56f, motionProgress)"))
@@ -308,37 +217,24 @@ class BottomBarLiquidSegmentedControlStructureTest {
         assertFalse(source.contains("resolveIosFloatingBottomIndicatorTintAlpha("))
         assertFalse(source.contains("resolveLiquidSegmentedIndicatorColor("))
         assertTrue(source.contains("liquidGlassEffectsEnabled: Boolean = true"))
-        assertTrue(source.contains("liquidGlassRequestedEnabled: Boolean? = null"))
         assertTrue(source.contains("dragSelectionEnabled: Boolean = true"))
         assertFalse(source.contains("shellBackdrop"))
-        assertTrue(source.contains("val tabsBackdrop = rememberMiuixLayerBackdrop()"))
-        assertTrue(source.contains(".miuixLayerBackdrop(tabsBackdrop)"))
+        assertTrue(source.contains("val tabsBackdrop = rememberLayerBackdrop()"))
+        assertTrue(source.contains(".layerBackdrop(tabsBackdrop)"))
         assertTrue(source.contains("val exportTintColor = resolveAndroidNativeExportTintColor("))
         assertTrue(source.contains(".graphicsLayer(colorFilter = ColorFilter.tint(exportTintColor))"))
-        assertTrue(source.contains("val hasExternalBackdrop = miuixBackdrop != null"))
-        assertTrue(source.contains("!shouldRenderIndicatorContentBackdrop -> null"))
-        assertTrue(source.contains("hasExternalBackdrop ->"))
-        assertTrue(source.contains("liquidGlassEnabled -> tabsBackdrop"))
-        assertTrue(source.contains("rememberMiuixCombinedBackdrop(miuixBackdrop, tabsBackdrop)"))
-        assertTrue(source.contains("shouldRenderSegmentedControlIndicatorContentBackdrop("))
-        assertTrue(source.contains("externalInteractionActive: Boolean = false"))
-        assertTrue(source.contains("isFeedScrollInProgress: Boolean = false"))
-        assertTrue(source.contains("shouldRenderSegmentedControlHiddenCaptureLayer("))
-        assertTrue(source.contains("shouldApplySegmentedControlExportThemeTint("))
-        assertTrue(source.contains("shouldApplySegmentedControlCaptureBackdropEffects("))
-        assertTrue(source.contains("resolveSegmentedControlIndicatorIdleSurfaceColor("))
-        assertTrue(source.contains("background(containerColor, containerShape)"))
+        assertTrue(source.contains("val contentBackdrop = tabsBackdrop"))
+        assertFalse(source.contains("val combinedBackdrop = rememberCombinedBackdrop(containerBackdrop, tabsBackdrop)"))
+        assertFalse(source.contains("val contentBackdrop = if (backdrop != null) combinedBackdrop else tabsBackdrop"))
         assertTrue(source.contains("shouldDrawSegmentedControlIndicatorBackdrop("))
         assertFalse(source.contains("val contentBackdrop = if (backdrop != null) combinedBackdrop else null"))
         assertFalse(source.contains("if (liquidGlassEnabled && contentBackdrop != null)"))
         assertFalse(source.contains("val useIndicatorBackdrop = liquidGlassEnabled && indicatorVisualPolicy.shouldRefract"))
         assertFalse(source.contains("LiquidIndicator("))
         assertFalse(source.contains("backdrop = indicatorBackdrop"))
-        assertTrue(source.contains("chromaticAberration = 0.5f"))
-        assertTrue(source.contains("miuixBackdrop: MiuixBackdrop? = null"))
+        assertTrue(source.contains("KernelSuBottomBarIndicatorLayer("))
+        assertTrue(source.contains("chromaticAberration = true"))
         assertTrue(source.contains("getHomeSettings("))
-        assertTrue(source.contains("val requestedLiquidGlassEnabled = liquidGlassRequestedEnabled"))
-        assertTrue(source.contains("?: homeSettings.isBottomBarLiquidGlassEnabled"))
         assertTrue(source.contains("resolveEffectiveLiquidGlassEnabled("))
         assertTrue(source.contains("resolveSegmentedControlChromeStyle("))
         assertTrue(source.contains("AndroidNativeUnderlinedSegmentedControl("))
@@ -371,11 +267,11 @@ class BottomBarLiquidSegmentedControlStructureTest {
         assertTrue(source.contains("indicatorWidth = indicatorWidth"))
         assertTrue(source.contains("indicatorHeight = resolvedIndicatorHeight"))
         assertTrue(source.contains("indicatorPanelOffsetPx = panelOffsetPx"))
-        assertFalse(source.contains("indicatorSettleReboundTransform = clickPulseTransform"))
+        assertTrue(source.contains("indicatorSettleReboundTransform = clickPulseTransform"))
         assertFalse(source.contains("scaleX = indicatorTransform.scaleX"))
         assertFalse(source.contains("scaleY = indicatorTransform.scaleY"))
         assertFalse(source.contains("containerWidthDp = maxWidth.value"))
-        val indicatorIndex = source.indexOf("KernelSuMiuixBottomBarIndicatorLayer(")
+        val indicatorIndex = source.indexOf("KernelSuBottomBarIndicatorLayer(")
         val visibleLabelsIndex = source.indexOf(
             "selectionEmphasis = refractionMotionProfile.visibleSelectionEmphasis",
             startIndex = indicatorIndex
@@ -405,16 +301,16 @@ class BottomBarLiquidSegmentedControlStructureTest {
         val dynamicTopBar = loadSource("app/src/main/java/com/android/purebilibili/feature/dynamic/components/DynamicTopBar.kt")
         val iosSegmented = loadSource("app/src/main/java/com/android/purebilibili/feature/settings/IOSSlidingSegmentedControl.kt")
 
-        assertTrue(commonList.contains("val commonListChromeBackdrop = rememberMiuixLayerBackdrop()"))
-        assertTrue(commonList.contains(".miuixLayerBackdrop(commonListChromeBackdrop)"))
-        assertTrue(commonList.contains("miuixBackdrop = commonListChromeBackdrop"))
-        assertTrue(dynamicScreen.contains("val dynamicChromeBackdrop = rememberMiuixLayerBackdrop()"))
-        assertTrue(dynamicScreen.contains(".miuixLayerBackdrop(dynamicChromeBackdrop)"))
-        assertTrue(dynamicScreen.contains("miuixBackdrop = dynamicChromeBackdrop"))
-        assertTrue(dynamicTopBar.contains("miuixBackdrop: MiuixBackdrop? = null"))
-        assertTrue(dynamicTopBar.contains("miuixBackdrop = miuixBackdrop"))
-        assertTrue(iosSegmented.contains("miuixBackdrop: MiuixBackdrop? = null"))
-        assertTrue(iosSegmented.contains("miuixBackdrop = miuixBackdrop"))
+        assertTrue(commonList.contains("val commonListChromeBackdrop = rememberLayerBackdrop()"))
+        assertTrue(commonList.contains(".layerBackdrop(commonListChromeBackdrop)"))
+        assertTrue(commonList.contains("backdrop = commonListChromeBackdrop"))
+        assertTrue(dynamicScreen.contains("val dynamicChromeBackdrop = rememberLayerBackdrop()"))
+        assertTrue(dynamicScreen.contains(".layerBackdrop(dynamicChromeBackdrop)"))
+        assertTrue(dynamicScreen.contains("backdrop = dynamicChromeBackdrop"))
+        assertTrue(dynamicTopBar.contains("backdrop: Backdrop? = null"))
+        assertTrue(dynamicTopBar.contains("backdrop = backdrop"))
+        assertTrue(iosSegmented.contains("backdrop: Backdrop? = null"))
+        assertTrue(iosSegmented.contains("backdrop = backdrop"))
     }
 
     @Test

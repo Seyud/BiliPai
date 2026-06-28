@@ -1244,7 +1244,6 @@ fun CommonListScreen(
                             height = favoriteHeaderLayout.browseToggleHeightDp.dp,
                             indicatorHeight = favoriteHeaderLayout.browseToggleIndicatorHeightDp.dp,
                             labelFontSize = favoriteHeaderLayout.browseToggleLabelFontSizeSp.sp,
-                            miuixBackdrop = commonListChromeBackdrop,
                             tapPressRefractionEnabled = false,
                             onSelectionChange = { section ->
                                 favoriteBrowseSection = section

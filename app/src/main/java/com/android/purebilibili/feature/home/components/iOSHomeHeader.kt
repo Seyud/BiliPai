@@ -1554,7 +1554,6 @@ fun iOSHomeHeader(
     pagerState: androidx.compose.foundation.pager.PagerState? = null, // [New] PagerState for sync
     // [New] LayerBackdrop for liquid glass effect
     backdrop: com.kyant.backdrop.backdrops.LayerBackdrop? = null,
-    miuixBackdrop: top.yukonga.miuix.kmp.blur.Backdrop? = null,
     homeSettings: com.android.purebilibili.core.store.HomeSettings? = null,
     topTabsVisible: Boolean = true,
     topTabsCollapsed: Boolean = false,
@@ -1661,6 +1660,8 @@ fun iOSHomeHeader(
     val isGlassSupported = shouldAllowHomeChromeLiquidGlass(Build.VERSION.SDK_INT)
     val allowHazeLiquidGlassFallback = shouldAllowDirectHazeLiquidGlassFallback(Build.VERSION.SDK_INT)
     val liquidStyle = homeSettings?.liquidGlassStyle ?: LiquidGlassStyle.CLASSIC
+    val bottomBarLiquidGlassPreset = homeSettings?.bottomBarLiquidGlassPreset
+        ?: HomeSettings().bottomBarLiquidGlassPreset
     val liquidGlassTuning = remember(
         homeSettings?.liquidGlassProgress,
         liquidStyle
@@ -2150,7 +2151,7 @@ fun iOSHomeHeader(
             backdrop = backdrop,
             liquidStyle = liquidStyle,
             liquidGlassTuning = liquidGlassTuning,
-
+            liquidGlassPreset = bottomBarLiquidGlassPreset,
             motionTier = motionTier,
             isScrolling = tabChromeMotionPolicy.isScrolling,
             isTransitionRunning = tabChromeMotionPolicy.isTransitionRunning,
@@ -2209,7 +2210,6 @@ fun iOSHomeHeader(
                 liquidGlassTuning = liquidGlassTuning,
                 hazeState = hazeState,
                 backdrop = backdrop,
-                miuixBackdrop = miuixBackdrop,
                 isFloatingStyle = isTabFloating,
                 edgeToEdge = integratedCollapsedTopBar,
                 hasOuterChromeSurface = drawTopTabDockChrome,
@@ -2217,7 +2217,6 @@ fun iOSHomeHeader(
                 motionTier = motionTier,
                 isTransitionRunning = isTransitionRunning,
                 forceLowBlurBudget = forceLowBlurBudget,
-                isFeedScrollInProgress = isScrolling,
                 isViewportSyncEnabled = isTopTabViewportSyncEnabled,
                 skinPlainStyle = shouldUseSkinPlainTopTabs,
                 skinPlainContentColor = null,
@@ -2560,7 +2559,7 @@ fun iOSHomeHeader(
                                                     backdrop = backdrop,
                                                     liquidGlassStyle = liquidStyle,
                                                     liquidGlassTuning = liquidGlassTuning,
-                                        
+                                                    liquidGlassPreset = bottomBarLiquidGlassPreset,
                                                     motionTier = motionTier,
                                                     isTransitionRunning = topChromeMotionPolicy.isTransitionRunning,
                                                     forceLowBlurBudget = forceLowBlurBudget
@@ -2672,7 +2671,7 @@ fun iOSHomeHeader(
                                                             backdrop = backdrop,
                                                             liquidGlassStyle = liquidStyle,
                                                             liquidGlassTuning = liquidGlassTuning,
-                                                
+                                                            liquidGlassPreset = bottomBarLiquidGlassPreset,
                                                             motionTier = motionTier,
                                                             isTransitionRunning = topChromeMotionPolicy.isTransitionRunning,
                                                             forceLowBlurBudget = forceLowBlurBudget,

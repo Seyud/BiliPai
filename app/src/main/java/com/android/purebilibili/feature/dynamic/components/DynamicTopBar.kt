@@ -158,8 +158,7 @@ private fun DynamicCompactTabRow(
         height = 44.dp,
         indicatorHeight = 36.dp,
         labelFontSize = 14.sp,
-        preferInlineContentStyle = true,
-        miuixBackdrop = miuixBackdrop
+        preferInlineContentStyle = true
     )
 }
 
