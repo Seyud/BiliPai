@@ -43,4 +43,22 @@ class HomeSettingsUiPresetPolicyTest {
         assertTrue(enabled.isTopBarLiquidGlassEnabled)
         assertTrue(enabled.isBottomBarLiquidGlassEnabled)
     }
+
+    @Test
+    fun effectiveLiquidGlass_md3RequiresAndroidNativeToggle() {
+        assertFalse(
+            resolveEffectiveLiquidGlassEnabled(
+                requestedEnabled = true,
+                uiPreset = UiPreset.MD3,
+                androidNativeLiquidGlassEnabled = false
+            )
+        )
+        assertTrue(
+            resolveEffectiveLiquidGlassEnabled(
+                requestedEnabled = true,
+                uiPreset = UiPreset.MD3,
+                androidNativeLiquidGlassEnabled = true
+            )
+        )
+    }
 }

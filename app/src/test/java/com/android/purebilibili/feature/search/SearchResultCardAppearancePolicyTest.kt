@@ -68,10 +68,25 @@ class SearchResultCardAppearancePolicyTest {
     }
 
     @Test
-    fun md3SearchResultCard_usesMoreMaterialSurfaceTuningEvenWhenGlassIsEnabled() {
+    fun md3SearchResultCard_staysPlainUnlessAndroidNativeLiquidGlassIsEnabled() {
+        val md3RequestedGlass = resolveSearchResultCardAppearance(
+            liquidGlassEnabled = true,
+            uiPreset = UiPreset.MD3,
+            androidNativeLiquidGlassEnabled = false
+        )
+
+        assertEquals(SearchResultCardSurfaceStyle.PLAIN, md3RequestedGlass.surfaceStyle)
+        assertEquals(1f, md3RequestedGlass.containerAlpha)
+        assertEquals(0f, md3RequestedGlass.borderAlpha)
+        assertEquals(1, md3RequestedGlass.tonalElevationDp)
+    }
+
+    @Test
+    fun md3SearchResultCard_usesMoreMaterialSurfaceTuningWhenNativeLiquidGlassIsEnabled() {
         val md3Glass = resolveSearchResultCardAppearance(
             liquidGlassEnabled = true,
-            uiPreset = UiPreset.MD3
+            uiPreset = UiPreset.MD3,
+            androidNativeLiquidGlassEnabled = true
         )
 
         assertEquals(SearchResultCardSurfaceStyle.GLASS, md3Glass.surfaceStyle)
@@ -79,6 +94,29 @@ class SearchResultCardAppearancePolicyTest {
         assertEquals(0f, md3Glass.borderAlpha)
         assertEquals(1, md3Glass.tonalElevationDp)
         assertEquals(0, md3Glass.shadowElevationDp)
+    }
+
+    @Test
+    fun md3VideoSearchAppearance_respectsEffectiveLiquidGlassGate() {
+        val gatedOff = resolveSearchVideoCardAppearance(
+            liquidGlassEnabled = true,
+            blurEnabled = true,
+            showHomeCoverGlassBadges = true,
+            showHomeInfoGlassBadges = true,
+            uiPreset = UiPreset.MD3,
+            androidNativeLiquidGlassEnabled = false
+        )
+        val gatedOn = resolveSearchVideoCardAppearance(
+            liquidGlassEnabled = true,
+            blurEnabled = true,
+            showHomeCoverGlassBadges = true,
+            showHomeInfoGlassBadges = true,
+            uiPreset = UiPreset.MD3,
+            androidNativeLiquidGlassEnabled = true
+        )
+
+        assertFalse(gatedOff.glassEnabled)
+        assertTrue(gatedOn.glassEnabled)
     }
 
     @Test

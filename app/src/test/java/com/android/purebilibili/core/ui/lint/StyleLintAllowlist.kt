@@ -66,7 +66,7 @@ internal object StyleLintAllowlist {
         "src/main/java/com/android/purebilibili/feature/profile/SplashWallpaperPickerSheet.kt",
         "src/main/java/com/android/purebilibili/feature/profile/WallpaperAdjustmentSheet.kt",
         "src/main/java/com/android/purebilibili/feature/screenshot/AppScreenshotRegionOverlay.kt",
-        "src/main/java/com/android/purebilibili/feature/search/SearchLandingUi.kt",
+
         "src/main/java/com/android/purebilibili/feature/search/SearchScreen.kt",
         "src/main/java/com/android/purebilibili/feature/search/SearchTrendingScreen.kt",
         "src/main/java/com/android/purebilibili/feature/search/TopicDetailScreen.kt",
@@ -183,7 +183,7 @@ internal object StyleLintAllowlist {
         "src/main/java/com/android/purebilibili/feature/profile/ProfileScreen.kt",
         "src/main/java/com/android/purebilibili/feature/profile/SplashWallpaperPickerSheet.kt",
         "src/main/java/com/android/purebilibili/feature/profile/WallpaperAdjustmentSheet.kt",
-        "src/main/java/com/android/purebilibili/feature/search/SearchLandingUi.kt",
+
         "src/main/java/com/android/purebilibili/feature/search/SearchScreen.kt",
         "src/main/java/com/android/purebilibili/feature/search/SearchTrendingScreen.kt",
         "src/main/java/com/android/purebilibili/feature/search/TopicDetailScreen.kt",

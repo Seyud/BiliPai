@@ -826,7 +826,7 @@ fun PureBiliBiliTheme(
     ).scaled(fontSizePreset.multiplier)
         .withFontFamily(appFontFamily)
     val materialMotionScheme = remember(uiPreset, androidNativeVariant) {
-        MotionScheme.standard()
+        resolveMaterialMotionScheme(uiPreset, androidNativeVariant)
     }
     val miuixTextStyles = remember(fontSizePreset, appFontFamily) {
         defaultTextStyles()

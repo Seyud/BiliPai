@@ -109,6 +109,8 @@ val BiliTypography = Typography(
     )
 )
 
+val Md3Typography = Typography()
+
 val BiliMiuixTypography = Typography(
     displayLarge = TextStyle(
         fontFamily = FontFamily.Default,

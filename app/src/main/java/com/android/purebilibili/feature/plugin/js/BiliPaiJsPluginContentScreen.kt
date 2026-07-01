@@ -14,7 +14,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import com.android.purebilibili.core.ui.AppShapes
+import com.android.purebilibili.core.ui.AppSurfaceTokens
+import com.android.purebilibili.core.ui.ContainerLevel
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -278,9 +280,9 @@ private fun BiliPaiJsMediaItemRow(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
+            .clip(AppShapes.container(ContainerLevel.Field))
             .clickable(enabled = item.isPlayable, onClick = onPlay),
-        color = MaterialTheme.colorScheme.surface,
+        color = AppSurfaceTokens.cardContainer(),
         tonalElevation = 1.dp
     ) {
         Row(
@@ -305,7 +307,7 @@ private fun BiliPaiJsMediaItemRow(
                         contentDescription = null,
                         modifier = Modifier
                             .fillMaxSize()
-                            .clip(RoundedCornerShape(6.dp)),
+                            .clip(AppShapes.container(ContainerLevel.Chip)),
                         contentScale = ContentScale.Crop,
                         onError = {
                             imageCandidateIndex += 1
@@ -362,7 +364,7 @@ private fun PluginMediaImagePlaceholder(
 ) {
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(6.dp)),
+            .clip(AppShapes.container(ContainerLevel.Chip)),
         contentAlignment = Alignment.Center
     ) {
         Surface(

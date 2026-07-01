@@ -22,7 +22,9 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import com.android.purebilibili.core.ui.AppShapes
+import com.android.purebilibili.core.ui.AppSurfaceTokens
+import com.android.purebilibili.core.ui.ContainerLevel
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material.icons.outlined.Visibility
@@ -271,10 +273,10 @@ fun SearchSuggestionDropdown(
 
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(22.dp),
+        shape = AppShapes.container(ContainerLevel.Pill),
         tonalElevation = 8.dp,
         shadowElevation = 10.dp,
-        color = MaterialTheme.colorScheme.surface
+        color = AppSurfaceTokens.cardContainer()
     ) {
         Column(
             modifier = Modifier.padding(vertical = 8.dp)
@@ -513,7 +515,7 @@ private fun SearchDiscoverOriginalCell(
     Surface(
         modifier = modifier,
         onClick = onClick,
-        shape = RoundedCornerShape(10.dp),
+        shape = AppShapes.container(ContainerLevel.Field),
         color = colors.containerColor,
         border = androidx.compose.foundation.BorderStroke(1.dp, colors.borderColor),
         tonalElevation = 0.dp,
@@ -604,7 +606,7 @@ internal fun SearchKeywordBadge(
         modifier = Modifier
             .background(
                 color = containerColor,
-                shape = RoundedCornerShape(6.dp)
+                shape = AppShapes.container(ContainerLevel.Chip)
             )
             .padding(horizontal = 6.dp, vertical = 2.dp),
         contentAlignment = Alignment.Center

@@ -1,8 +1,11 @@
 package com.android.purebilibili.core.theme
 
+import androidx.compose.material3.MotionScheme
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotSame
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class AndroidNativeVariantThemePolicyTest {
@@ -19,14 +22,15 @@ class AndroidNativeVariantThemePolicyTest {
     }
 
     @Test
-    fun material3Variant_keepsExistingTypography() {
+    fun material3Variant_usesMd3TypographyInsteadOfIosScale() {
         val typography = resolveMaterialTypography(
             uiPreset = UiPreset.MD3,
             androidNativeVariant = AndroidNativeVariant.MATERIAL3
         )
 
-        assertEquals(BiliTypography.bodyMedium.fontSize, typography.bodyMedium.fontSize)
-        assertEquals(BiliTypography.titleMedium.letterSpacing, typography.titleMedium.letterSpacing)
+        assertEquals(Md3Typography.bodyMedium.fontSize, typography.bodyMedium.fontSize)
+        assertEquals(Md3Typography.titleMedium.letterSpacing, typography.titleMedium.letterSpacing)
+        assertFalse(typography.bodyMedium.fontSize == BiliTypography.bodyMedium.fontSize)
     }
 
     @Test
@@ -61,6 +65,32 @@ class AndroidNativeVariantThemePolicyTest {
                 androidNativeVariant = AndroidNativeVariant.MATERIAL3
             )
         )
+    }
+
+    @Test
+    fun material3Variant_usesExpressiveMotionScheme() {
+        val motionScheme = resolveMaterialMotionScheme(
+            uiPreset = UiPreset.MD3,
+            androidNativeVariant = AndroidNativeVariant.MATERIAL3
+        )
+
+        assertSame(MotionScheme.expressive(), motionScheme)
+        assertNotSame(MotionScheme.standard(), motionScheme)
+    }
+
+    @Test
+    fun miuixAndIosVariants_keepStandardMotionScheme() {
+        val miuix = resolveMaterialMotionScheme(
+            uiPreset = UiPreset.MD3,
+            androidNativeVariant = AndroidNativeVariant.MIUIX
+        )
+        val ios = resolveMaterialMotionScheme(
+            uiPreset = UiPreset.IOS,
+            androidNativeVariant = AndroidNativeVariant.MATERIAL3
+        )
+
+        assertSame(MotionScheme.standard(), miuix)
+        assertSame(MotionScheme.standard(), ios)
     }
 
     @Test

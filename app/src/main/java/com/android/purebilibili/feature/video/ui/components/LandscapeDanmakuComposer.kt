@@ -26,7 +26,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import com.android.purebilibili.core.ui.AppShapes
+import com.android.purebilibili.core.ui.ContainerLevel
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -237,7 +238,7 @@ fun LandscapeDanmakuComposer(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clip(RoundedCornerShape(10.dp))
+                                    .clip(AppShapes.container(ContainerLevel.Field))
                                     .background(Color.White.copy(alpha = 0.08f))
                                     .clickable {
                                         attentionCommandChecked = !attentionCommandChecked
@@ -294,7 +295,7 @@ fun LandscapeDanmakuComposer(
                         modifier = Modifier
                             .weight(1f)
                             .heightIn(min = 48.dp)
-                            .clip(RoundedCornerShape(24.dp))
+                            .clip(AppShapes.container(ContainerLevel.Pill))
                             .background(Color.White.copy(alpha = 0.14f))
                             .padding(horizontal = 16.dp),
                         contentAlignment = Alignment.CenterStart
@@ -375,7 +376,7 @@ fun LandscapeDanmakuComposer(
                         modifier = Modifier
                             .height(48.dp)
                             .width(72.dp),
-                        shape = RoundedCornerShape(24.dp),
+                        shape = AppShapes.container(ContainerLevel.Pill),
                         contentPadding = PaddingValues(horizontal = 12.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,

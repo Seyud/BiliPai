@@ -1,5 +1,6 @@
 package com.android.purebilibili.feature.search
 
+import com.android.purebilibili.core.store.resolveEffectiveLiquidGlassEnabled
 import com.android.purebilibili.core.theme.UiPreset
 
 internal enum class SearchResultCardSurfaceStyle {
@@ -31,19 +32,34 @@ internal fun resolveSearchVideoCardAppearance(
     liquidGlassEnabled: Boolean,
     blurEnabled: Boolean,
     showHomeCoverGlassBadges: Boolean,
-    showHomeInfoGlassBadges: Boolean
-): SearchVideoCardAppearance = SearchVideoCardAppearance(
-    glassEnabled = liquidGlassEnabled,
-    blurEnabled = blurEnabled,
-    showCoverGlassBadges = false,
-    showInfoGlassBadges = false
-)
+    showHomeInfoGlassBadges: Boolean,
+    uiPreset: UiPreset = UiPreset.IOS,
+    androidNativeLiquidGlassEnabled: Boolean = false
+): SearchVideoCardAppearance {
+    val effectiveLiquidGlassEnabled = resolveEffectiveLiquidGlassEnabled(
+        requestedEnabled = liquidGlassEnabled,
+        uiPreset = uiPreset,
+        androidNativeLiquidGlassEnabled = androidNativeLiquidGlassEnabled
+    )
+    return SearchVideoCardAppearance(
+        glassEnabled = effectiveLiquidGlassEnabled,
+        blurEnabled = blurEnabled,
+        showCoverGlassBadges = false,
+        showInfoGlassBadges = false
+    )
+}
 
 internal fun resolveSearchResultCardAppearance(
     liquidGlassEnabled: Boolean,
-    uiPreset: UiPreset = UiPreset.IOS
+    uiPreset: UiPreset = UiPreset.IOS,
+    androidNativeLiquidGlassEnabled: Boolean = false
 ): SearchResultCardAppearance {
-    return if (liquidGlassEnabled && uiPreset == UiPreset.MD3) {
+    val effectiveLiquidGlassEnabled = resolveEffectiveLiquidGlassEnabled(
+        requestedEnabled = liquidGlassEnabled,
+        uiPreset = uiPreset,
+        androidNativeLiquidGlassEnabled = androidNativeLiquidGlassEnabled
+    )
+    return if (effectiveLiquidGlassEnabled && uiPreset == UiPreset.MD3) {
         SearchResultCardAppearance(
             surfaceStyle = SearchResultCardSurfaceStyle.GLASS,
             containerAlpha = 0.96f,
@@ -51,7 +67,7 @@ internal fun resolveSearchResultCardAppearance(
             tonalElevationDp = 1,
             shadowElevationDp = 0
         )
-    } else if (liquidGlassEnabled) {
+    } else if (effectiveLiquidGlassEnabled) {
         SearchResultCardAppearance(
             surfaceStyle = SearchResultCardSurfaceStyle.GLASS,
             containerAlpha = 0.92f,

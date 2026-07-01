@@ -606,6 +606,9 @@ fun SearchScreen(
     val hotSearchEnabled by SettingsManager.getSearchHotSectionEnabled(context).collectAsStateWithLifecycle(initialValue = true)
     val discoverSectionEnabled by SettingsManager.getSearchDiscoverSectionEnabled(context).collectAsStateWithLifecycle(initialValue = true)
     val liquidGlassEnabled by SettingsManager.getLiquidGlassEnabled(context).collectAsStateWithLifecycle(initialValue = true)
+    val androidNativeLiquidGlassEnabled by SettingsManager
+        .getAndroidNativeLiquidGlassEnabled(context)
+        .collectAsStateWithLifecycle(initialValue = false)
     val headerBlurEnabled by SettingsManager.getHeaderBlurEnabled(context).collectAsStateWithLifecycle(initialValue = true)
     val bottomBarBlurEnabled by SettingsManager.getBottomBarBlurEnabled(context).collectAsStateWithLifecycle(initialValue = true)
     val cardMotionTier = resolveEffectiveMotionTier(
@@ -620,19 +623,28 @@ fun SearchScreen(
     }
     val videoCardAppearance = remember(
         liquidGlassEnabled,
-        searchCardBlurEnabled
+        searchCardBlurEnabled,
+        uiPreset,
+        androidNativeLiquidGlassEnabled
     ) {
         resolveSearchVideoCardAppearance(
             liquidGlassEnabled = liquidGlassEnabled,
             blurEnabled = searchCardBlurEnabled,
             showHomeCoverGlassBadges = false,
-            showHomeInfoGlassBadges = false
+            showHomeInfoGlassBadges = false,
+            uiPreset = uiPreset,
+            androidNativeLiquidGlassEnabled = androidNativeLiquidGlassEnabled
         )
     }
-    val genericResultCardAppearance = remember(liquidGlassEnabled, uiPreset) {
+    val genericResultCardAppearance = remember(
+        liquidGlassEnabled,
+        uiPreset,
+        androidNativeLiquidGlassEnabled
+    ) {
         resolveSearchResultCardAppearance(
             liquidGlassEnabled = liquidGlassEnabled,
-            uiPreset = uiPreset
+            uiPreset = uiPreset,
+            androidNativeLiquidGlassEnabled = androidNativeLiquidGlassEnabled
         )
     }
     val cardTransitionEnabled by SettingsManager.getCardTransitionEnabled(context).collectAsStateWithLifecycle(initialValue = false)

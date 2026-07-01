@@ -1,5 +1,6 @@
 package com.android.purebilibili.core.theme
 
+import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 
@@ -71,7 +72,18 @@ fun resolveMaterialTypography(
     return when {
         uiPreset == UiPreset.IOS -> BiliTypography
         androidNativeVariant == AndroidNativeVariant.MIUIX -> BiliMiuixTypography
-        else -> BiliTypography
+        else -> Md3Typography
+    }
+}
+
+fun resolveMaterialMotionScheme(
+    uiPreset: UiPreset,
+    androidNativeVariant: AndroidNativeVariant
+): MotionScheme {
+    return when {
+        uiPreset == UiPreset.MD3 && androidNativeVariant == AndroidNativeVariant.MATERIAL3 ->
+            MotionScheme.expressive()
+        else -> MotionScheme.standard()
     }
 }
 
