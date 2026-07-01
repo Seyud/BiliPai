@@ -98,10 +98,26 @@ class VideoContentTabBarPolicyTest {
         )
 
         assertTrue(source.contains("val videoContentChromeBackdrop = rememberLayerBackdrop()"))
-        assertTrue(source.contains(".layerBackdrop(videoContentChromeBackdrop)"))
-        assertTrue(source.contains("backdrop = videoContentChromeBackdrop"))
         assertTrue(source.contains("chromeBackdrop = videoContentChromeBackdrop"))
+        assertTrue(source.contains("backdrop = videoContentChromeBackdrop"))
         assertTrue(source.contains("backdrop = chromeBackdrop"))
+        assertTrue(source.contains("Column(modifier = modifier.fillMaxSize())"))
+        assertTrue(
+            source.contains(
+                "采样层只挂在 Tab 页滚动内容上；排序栏/顶栏分段控件必须在捕获区外"
+            )
+        )
+        val commentTabSource = source.substringAfter("private fun VideoCommentTab(")
+            .substringBefore("private fun VideoHeaderContent(")
+        assertTrue(commentTabSource.contains("CommentSortFilterBar("))
+        assertFalse(commentTabSource.contains("item {\n                CommentSortFilterBar("))
+        val pagerBlock = source
+            .substringAfter("HorizontalPager(")
+            .substringBefore(") { page ->")
+        assertFalse(
+            pagerBlock.contains("layerBackdrop"),
+            "Pager must not capture backdrop; segmented controls inside would self-sample and overflow RenderThread stack on MIUI"
+        )
         assertTrue(source.contains("forceLiquidChrome = homeSettings.androidNativeLiquidGlassEnabled"))
         assertTrue(source.contains("liquidGlassEffectsEnabled = backdrop != null"))
     }

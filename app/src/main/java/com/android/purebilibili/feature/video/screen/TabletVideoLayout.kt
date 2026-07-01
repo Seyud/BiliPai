@@ -550,28 +550,27 @@ private fun TabletSecondaryContent(
                         )
                     } else {
                         val commentChromeBackdrop = rememberLayerBackdrop()
-                        Box(modifier = Modifier.fillMaxSize()) {
-                        LazyColumn(
-                            state = listState,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .layerBackdrop(commentChromeBackdrop),
-                            contentPadding = PaddingValues(8.dp)
-                        ) {
-                            item {
-                                CommentSortFilterBar(
-                                    count = commentState.replyCount,
-                                    sortMode = commentState.sortMode,
-                                    onSortModeChange = { mode ->
-                                        commentViewModel.setSortMode(mode)
-                                        scope.launch {
-                                            com.android.purebilibili.core.store.SettingsManager
-                                                .setCommentDefaultSortMode(context, mode.apiMode)
-                                        }
-                                    },
-                                    backdrop = commentChromeBackdrop
-                                )
-                            }
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            CommentSortFilterBar(
+                                count = commentState.replyCount,
+                                sortMode = commentState.sortMode,
+                                onSortModeChange = { mode ->
+                                    commentViewModel.setSortMode(mode)
+                                    scope.launch {
+                                        com.android.purebilibili.core.store.SettingsManager
+                                            .setCommentDefaultSortMode(context, mode.apiMode)
+                                    }
+                                },
+                                backdrop = commentChromeBackdrop
+                            )
+                            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                            LazyColumn(
+                                state = listState,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .layerBackdrop(commentChromeBackdrop),
+                                contentPadding = PaddingValues(8.dp)
+                            ) {
                             item {
                                 Surface(
                                     modifier = Modifier
@@ -655,7 +654,7 @@ private fun TabletSecondaryContent(
                                     }
                                 }
                             }
-                        }
+                            }
 
                         if (commentState.replies.isEmpty() && !commentState.isRepliesLoading) {
                             Column(
@@ -715,7 +714,8 @@ private fun TabletSecondaryContent(
                                 )
                             }
                         }
-                    }
+                            }
+                        }
                     }
                 }
 

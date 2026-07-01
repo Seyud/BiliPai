@@ -1174,29 +1174,28 @@ private fun CinemaCommentsPane(
         )
     } else {
         val commentChromeBackdrop = rememberLayerBackdrop()
-        Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            state = listState,
-            modifier = Modifier
-                .fillMaxSize()
-                .layerBackdrop(commentChromeBackdrop),
-            contentPadding = PaddingValues(bottom = 74.dp)
-        ) {
-            item {
-                CommentSortFilterBar(
-                    count = commentState.replyCount,
-                    sortMode = commentState.sortMode,
-                    onSortModeChange = { mode ->
-                        commentViewModel.setSortMode(mode)
-                        scope.launch {
-                            SettingsManager.setCommentDefaultSortMode(context, mode.apiMode)
-                        }
-                    },
-                    upOnly = commentState.upOnlyFilter,
-                    onUpOnlyToggle = { commentViewModel.toggleUpOnly() },
-                    backdrop = commentChromeBackdrop
-                )
-            }
+        Column(modifier = Modifier.fillMaxSize()) {
+            CommentSortFilterBar(
+                count = commentState.replyCount,
+                sortMode = commentState.sortMode,
+                onSortModeChange = { mode ->
+                    commentViewModel.setSortMode(mode)
+                    scope.launch {
+                        SettingsManager.setCommentDefaultSortMode(context, mode.apiMode)
+                    }
+                },
+                upOnly = commentState.upOnlyFilter,
+                onUpOnlyToggle = { commentViewModel.toggleUpOnly() },
+                backdrop = commentChromeBackdrop
+            )
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .layerBackdrop(commentChromeBackdrop),
+                contentPadding = PaddingValues(bottom = 74.dp)
+            ) {
             item {
                 Surface(
                     modifier = Modifier
@@ -1295,7 +1294,7 @@ private fun CinemaCommentsPane(
                     }
                 }
             }
-        }
+            }
 
         FloatingActionButton(
             onClick = { commentViewModel.toggleUpOnly() },
@@ -1320,7 +1319,8 @@ private fun CinemaCommentsPane(
                 fontSize = 12.sp
             )
         }
-    }
+            }
+        }
     }
 }
 

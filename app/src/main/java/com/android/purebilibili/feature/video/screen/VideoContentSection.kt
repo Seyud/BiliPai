@@ -58,6 +58,7 @@ import com.android.purebilibili.core.store.DanmakuSettings
 import com.android.purebilibili.core.store.HomeSettings
 import com.android.purebilibili.core.store.SettingsManager
 import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.android.purebilibili.core.theme.AndroidNativeVariant
@@ -474,6 +475,7 @@ fun VideoContentSection(
             }
     }
 
+    // 采样层只挂在 Tab 页滚动内容上；排序栏/顶栏分段控件必须在捕获区外，避免 drawBackdrop 自引用导致 RenderThread 栈溢出。
     val videoContentChromeBackdrop = rememberLayerBackdrop()
     Box(
         modifier = Modifier.fillMaxSize()
@@ -506,12 +508,12 @@ fun VideoContentSection(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .layerBackdrop(videoContentChromeBackdrop)
             ) { page ->
                 when (page) {
                     0 -> VideoIntroTab(
                         listState = introListState,
                         modifier = Modifier,
+                        chromeBackdrop = videoContentChromeBackdrop,
                         info = info,
                         relatedVideos = relatedVideos,
                         currentPageIndex = currentPageIndex,
@@ -725,12 +727,21 @@ private fun VideoIntroTab(
     onlineCount: String = "",
     showOnlineCount: Boolean = true,
     showInteractionActions: Boolean = true,
-    animateVideoDetailLayout: Boolean = true
+    animateVideoDetailLayout: Boolean = true,
+    chromeBackdrop: LayerBackdrop? = null
 ) {
     val hasPages = info.pages.size > 1
     LazyColumn(
         state = listState,
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .then(
+                if (chromeBackdrop != null) {
+                    Modifier.layerBackdrop(chromeBackdrop)
+                } else {
+                    Modifier
+                }
+            ),
         contentPadding = contentPadding
     ) {
         // 1. 移入的 Header 区域
@@ -876,7 +887,7 @@ private fun VideoCommentTab(
     onToggleTopComment: (ReplyItem) -> Unit,
     showIdentityDecorations: Boolean,
     lightweightCommentRendering: Boolean,
-    chromeBackdrop: Backdrop? = null
+    chromeBackdrop: LayerBackdrop? = null
 ) {
     val commentAppearance = rememberVideoCommentAppearance()
     val scope = rememberCoroutineScope()
@@ -909,24 +920,29 @@ private fun VideoCommentTab(
             onLoadMoreReplies()
         }
     }
-    Box(
-        modifier = modifier.fillMaxSize()
-    ) {
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = contentPadding
-        ) {
-            item {
-                CommentSortFilterBar(
-                    count = replyCount,
-                    sortMode = sortMode,
-                    onSortModeChange = onSortModeChange,
-                    upOnly = upOnlyFilter,
-                    onUpOnlyToggle = onUpOnlyToggle,
-                    backdrop = chromeBackdrop
-                )
-            }
+    Column(modifier = modifier.fillMaxSize()) {
+        CommentSortFilterBar(
+            count = replyCount,
+            sortMode = sortMode,
+            onSortModeChange = onSortModeChange,
+            upOnly = upOnlyFilter,
+            onUpOnlyToggle = onUpOnlyToggle,
+            backdrop = chromeBackdrop
+        )
+        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(
+                        if (chromeBackdrop != null) {
+                            Modifier.layerBackdrop(chromeBackdrop)
+                        } else {
+                            Modifier
+                        }
+                    ),
+                contentPadding = contentPadding
+            ) {
             if (isRepliesLoading && replies.isEmpty()) {
                 item {
                     Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
@@ -1011,32 +1027,33 @@ private fun VideoCommentTab(
                     }
                 }
             }
-        }
+            }
 
-        AnimatedVisibility(
-            visible = shouldShowBackToTop,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(
-                    end = 20.dp,
-                    bottom = contentPadding.calculateBottomPadding() + 12.dp
-                ),
-            enter = fadeIn(animationSpec = tween(180)) + scaleIn(initialScale = 0.92f),
-            exit = fadeOut(animationSpec = tween(140)) + scaleOut(targetScale = 0.92f)
-        ) {
-            SmallFloatingActionButton(
-                onClick = {
-                    scope.launch {
-                        listState.animateScrollToItem(0)
-                    }
-                },
-                containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
-                contentColor = MaterialTheme.colorScheme.primary
+            androidx.compose.animation.AnimatedVisibility(
+                visible = shouldShowBackToTop,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(
+                        end = 20.dp,
+                        bottom = contentPadding.calculateBottomPadding() + 12.dp
+                    ),
+                enter = fadeIn(animationSpec = tween(180)) + scaleIn(initialScale = 0.92f),
+                exit = fadeOut(animationSpec = tween(140)) + scaleOut(targetScale = 0.92f)
             ) {
-                Icon(
-                    imageVector = rememberAppChevronUpIcon(),
-                    contentDescription = "回到顶部"
-                )
+                SmallFloatingActionButton(
+                    onClick = {
+                        scope.launch {
+                            listState.animateScrollToItem(0)
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+                    contentColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Icon(
+                        imageVector = rememberAppChevronUpIcon(),
+                        contentDescription = "回到顶部"
+                    )
+                }
             }
         }
     }
