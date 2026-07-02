@@ -6,7 +6,6 @@ import com.android.purebilibili.core.theme.UiPreset
 
 internal data class AppNavigationAppearance(
     val cardTransitionEnabled: Boolean,
-    val videoTransitionRealtimeBlurEnabled: Boolean,
     val bottomBarBlurEnabled: Boolean,
     val bottomBarLabelMode: Int,
     val bottomBarFloating: Boolean
@@ -30,7 +29,6 @@ internal fun resolveAppNavigationAppearance(
 ): AppNavigationAppearance {
     return AppNavigationAppearance(
         cardTransitionEnabled = homeSettings.cardTransitionEnabled,
-        videoTransitionRealtimeBlurEnabled = homeSettings.videoTransitionRealtimeBlurEnabled,
         bottomBarBlurEnabled = resolveEffectiveNavigationBottomBarBlur(
             homeSettings = homeSettings,
             uiPreset = uiPreset,

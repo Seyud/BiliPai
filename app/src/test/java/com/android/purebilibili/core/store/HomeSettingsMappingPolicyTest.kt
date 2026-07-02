@@ -59,7 +59,6 @@ class HomeSettingsMappingPolicyTest {
             VIDEO_SHARED_TRANSITION_CUSTOM_DEFAULT_MILLIS,
             result.videoSharedTransitionCustomDurationMillis
         )
-        assertTrue(result.videoTransitionRealtimeBlurEnabled)
         assertFalse(result.smartVisualGuardEnabled)
         assertTrue(result.compactVideoStatsOnCover)
         assertEquals(HomeFeedCardStyle.OFFICIAL, result.homeFeedCardStyle)
@@ -103,7 +102,6 @@ class HomeSettingsMappingPolicyTest {
             booleanPreferencesKey("card_transition_enabled") to false,
             intPreferencesKey("video_shared_transition_speed") to VideoSharedTransitionSpeed.CUSTOM.value,
             intPreferencesKey("video_shared_transition_custom_duration_millis") to 620,
-            booleanPreferencesKey("video_transition_realtime_blur_enabled") to false,
             booleanPreferencesKey("smart_visual_guard_enabled") to false,
             booleanPreferencesKey("compact_video_stats_on_cover") to false,
             booleanPreferencesKey("home_video_duration_badges_visible") to false,
@@ -151,7 +149,6 @@ class HomeSettingsMappingPolicyTest {
         assertFalse(result.cardTransitionEnabled)
         assertEquals(VideoSharedTransitionSpeed.CUSTOM, result.videoSharedTransitionSpeed)
         assertEquals(620, result.videoSharedTransitionCustomDurationMillis)
-        assertFalse(result.videoTransitionRealtimeBlurEnabled)
         assertFalse(result.smartVisualGuardEnabled)
         assertFalse(result.compactVideoStatsOnCover)
         assertEquals(HomeFeedCardStyle.OFFICIAL, result.homeFeedCardStyle)

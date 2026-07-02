@@ -39,7 +39,6 @@ data class OnboardingSettingsGuidePreset(
     val dataSaverMode: SettingsManager.DataSaverMode,
     val lowQualityHomeCoverInDataSaver: Boolean,
     val cardTransitionEnabled: Boolean,
-    val videoTransitionRealtimeBlurEnabled: Boolean,
     val summaryLines: List<String>
 )
 
@@ -75,7 +74,6 @@ fun resolveOnboardingSettingsGuidePreset(
             dataSaverMode = SettingsManager.DataSaverMode.MOBILE_ONLY,
             lowQualityHomeCoverInDataSaver = false,
             cardTransitionEnabled = true,
-            videoTransitionRealtimeBlurEnabled = true,
             summaryLines = sharedSummary
         )
 
@@ -93,8 +91,7 @@ fun resolveOnboardingSettingsGuidePreset(
             dataSaverMode = SettingsManager.DataSaverMode.MOBILE_ONLY,
             lowQualityHomeCoverInDataSaver = false,
             cardTransitionEnabled = true,
-            videoTransitionRealtimeBlurEnabled = false,
-            summaryLines = sharedSummary + "关闭视频转场实时模糊"
+            summaryLines = sharedSummary + "保留核心视频过渡"
         )
 
         OnboardingSettingsProfile.DATA_SAVER -> OnboardingSettingsGuidePreset(
@@ -111,7 +108,6 @@ fun resolveOnboardingSettingsGuidePreset(
             dataSaverMode = SettingsManager.DataSaverMode.MOBILE_ONLY,
             lowQualityHomeCoverInDataSaver = true,
             cardTransitionEnabled = true,
-            videoTransitionRealtimeBlurEnabled = true,
             summaryLines = sharedSummary + "省流量时首页封面使用低清晰度"
         )
     }
@@ -137,8 +133,4 @@ suspend fun applyOnboardingSettingsGuidePreset(
         value = preset.lowQualityHomeCoverInDataSaver
     )
     SettingsManager.setCardTransitionEnabled(context, preset.cardTransitionEnabled)
-    SettingsManager.setVideoTransitionRealtimeBlurEnabled(
-        context = context,
-        value = preset.videoTransitionRealtimeBlurEnabled
-    )
 }

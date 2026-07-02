@@ -31,18 +31,7 @@ import androidx.navigationevent.compose.NavigationEventState
 import androidx.navigationevent.compose.rememberNavigationEventState
 import com.android.purebilibili.core.ui.ProvideAnimatedVisibilityScope
 import com.android.purebilibili.core.ui.transition.LocalVideoCardSharedElementSourceRoute
-import com.android.purebilibili.core.ui.transition.LocalVideoCardTransitionSession
-import com.android.purebilibili.core.ui.transition.VideoCardTransitionController
-import com.android.purebilibili.core.ui.transition.VideoCardTransitionSession
-import com.android.purebilibili.core.ui.transition.VideoSharedTransitionBackdropHost
-import com.android.purebilibili.core.ui.transition.isVideoSharedElementRouteTransition
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
-import androidx.navigationevent.NavigationEventTransitionState.InProgress
 import com.android.purebilibili.navigation3.predictiveback.BiliPaiPredictiveBackAnimationHandler
 import com.android.purebilibili.navigation3.predictiveback.BiliPaiPredictiveBackAnimationStyle
 import com.android.purebilibili.navigation3.predictiveback.resolveBiliPaiAutoPredictiveBackExitDirection
@@ -63,8 +52,6 @@ internal fun BiliPaiNavDisplayHost(
     sharedTransitionScope: SharedTransitionScope? = null,
     visibleBottomBarRoutes: Set<String> = emptySet(),
     activeMainHostRoute: String? = null,
-    videoCardTransitionController: VideoCardTransitionController? = null,
-    maxVideoCardTransitionBlurRadiusDp: Float = 16f,
     content: @Composable (BiliPaiNavKey) -> Unit
 ) {
     val safeBackStack = remember(backStack) {
@@ -119,14 +106,10 @@ internal fun BiliPaiNavDisplayHost(
             onBack()
         }
     }
-    val sharedElementRouteTransition = isVideoSharedElementRouteTransition(popRouteTransition)
-    val videoCardTransitionSession = videoCardTransitionController?.session ?: VideoCardTransitionSession()
     val scopedContent: @Composable (BiliPaiNavKey) -> Unit = remember(
         content,
         application,
         cardTransitionEnabled,
-        maxVideoCardTransitionBlurRadiusDp,
-        videoCardTransitionSession,
         safeBackStack
     ) {
         { key ->
@@ -134,18 +117,10 @@ internal fun BiliPaiNavDisplayHost(
                 animatedVisibilityScope = LocalNavAnimatedContentScope.current
             ) {
                 CompositionLocalProvider(
-                    LocalVideoCardSharedElementSourceRoute provides key.toLegacyRoute(),
-                    LocalVideoCardTransitionSession provides videoCardTransitionSession
+                    LocalVideoCardSharedElementSourceRoute provides key.toLegacyRoute()
                 ) {
                     ProvideNavigation3ViewModelApplicationExtras(application) {
-                        VideoSharedTransitionBackdropHost(
-                            cardTransitionEnabled = cardTransitionEnabled,
-                            entryKey = key,
-                            topKey = safeBackStack.lastOrNull(),
-                            maxBlurRadiusDp = maxVideoCardTransitionBlurRadiusDp
-                        ) {
-                            content(key)
-                        }
+                        content(key)
                     }
                 }
             }
@@ -202,31 +177,6 @@ internal fun BiliPaiNavDisplayHost(
         currentInfo = currentInfo,
         backInfo = previousSceneInfos
     )
-
-    var predictiveBackdropGestureActive by remember { mutableStateOf(false) }
-    LaunchedEffect(videoCardTransitionController, sharedElementRouteTransition, navigationEventState, safeBackStack) {
-        val controller = videoCardTransitionController ?: return@LaunchedEffect
-        if (!sharedElementRouteTransition) return@LaunchedEffect
-        snapshotFlow { navigationEventState.transitionState }
-            .collect { state ->
-                when (state) {
-                    is InProgress -> {
-                        predictiveBackdropGestureActive = true
-                        val gestureProgress = state.latestEvent.progress
-                        controller.applyPredictiveBackdropFraction(1f - gestureProgress)
-                    }
-                    else -> {
-                        if (
-                            predictiveBackdropGestureActive &&
-                            safeBackStack.lastOrNull() is BiliPaiNavKey.VideoDetail
-                        ) {
-                            controller.restoreExpandedBackdrop()
-                        }
-                        predictiveBackdropGestureActive = false
-                    }
-                }
-            }
-    }
 
     NavigationBackHandler(
         state = navigationEventState,

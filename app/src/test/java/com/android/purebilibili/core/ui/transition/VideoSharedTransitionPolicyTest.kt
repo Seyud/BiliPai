@@ -114,29 +114,6 @@ class VideoSharedTransitionPolicyTest {
     }
 
     @Test
-    fun videoSharedTransitionBackdrop_onlyAppliesToUnderlyingSourceDuringSharedVideoRoute() {
-        val enabled = resolveVideoSharedTransitionBackdropFrame(
-            cardTransitionEnabled = true,
-            sharedElementRouteTransition = true,
-            transitionInProgress = true,
-            entryInvolvesVideoDetail = true,
-            entryIsUnderlyingSource = true
-        )
-        val disabled = resolveVideoSharedTransitionBackdropFrame(
-            cardTransitionEnabled = false,
-            sharedElementRouteTransition = true,
-            transitionInProgress = true,
-            entryInvolvesVideoDetail = true,
-            entryIsUnderlyingSource = true
-        )
-
-        assertTrue(enabled.enabled)
-        assertEquals(5f, enabled.blurRadiusDp)
-        assertTrue(enabled.scrimAlpha > 0f)
-        assertFalse(disabled.enabled)
-    }
-
-    @Test
     fun videoCardSharedTransitionMotion_usesStandardCoverPrimaryTimelineByDefault() {
         val motion = resolveVideoCardSharedTransitionMotionSpec(
             sourceRoute = "home",
@@ -279,7 +256,7 @@ class VideoSharedTransitionPolicyTest {
         assertFalse(watchLaterSource.contains("videoTitleSharedElementKey("))
         assertTrue(spaceSource.contains("videoCardShellSharedBoundsOrEmpty("))
         assertFalse(spaceSource.contains("videoTitleSharedElementKey("))
-        assertTrue(navHostSource.contains("VideoSharedTransitionBackdropHost("))
+        assertFalse(navHostSource.contains("VideoSharedTransitionBackdropHost("))
     }
 
     @Test

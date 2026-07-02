@@ -71,8 +71,6 @@ private const val DEFAULT_VIDEO_CARD_CORNER_DP = 12
 private const val DEFAULT_VIDEO_PLAYER_CORNER_DP = 12
 private const val DYNAMIC_VIDEO_CARD_CORNER_DP = 10
 private const val WATCH_LATER_VIDEO_CARD_CORNER_DP = 8
-private const val VIDEO_SHARED_TRANSITION_BACKDROP_BLUR_DP = 5f
-private const val VIDEO_SHARED_TRANSITION_BACKDROP_SCRIM_ALPHA = 0.06f
 private val VIDEO_CARD_IOS_LIKE_EASE_OUT = CubicBezierEasing(0.18f, 0.76f, 0.22f, 1f)
 
 enum class VideoSharedTransitionSpeed(val value: Int, val label: String) {
@@ -96,12 +94,6 @@ internal data class VideoSharedTransitionOwnership(
     val useCoverSharedBounds: Boolean,
     val useMetadataSharedBounds: Boolean,
     val useCardContainerSharedBounds: Boolean = false
-)
-
-internal data class VideoSharedTransitionBackdropFrame(
-    val enabled: Boolean,
-    val blurRadiusDp: Float,
-    val scrimAlpha: Float
 )
 
 internal data class VideoSharedTransitionMotionSpec(
@@ -289,49 +281,6 @@ internal fun resolveVideoSharedTransitionOwnership(
         ),
         useCardContainerSharedBounds = useCardContainerSharedBounds
     )
-}
-
-internal fun shouldApplyVideoSharedTransitionBackdropToEntry(
-    cardTransitionEnabled: Boolean,
-    sharedElementRouteTransition: Boolean,
-    transitionInProgress: Boolean,
-    entryInvolvesVideoDetail: Boolean,
-    entryIsUnderlyingSource: Boolean
-): Boolean {
-    return cardTransitionEnabled &&
-        sharedElementRouteTransition &&
-        transitionInProgress &&
-        entryInvolvesVideoDetail &&
-        entryIsUnderlyingSource
-}
-
-internal fun resolveVideoSharedTransitionBackdropFrame(
-    cardTransitionEnabled: Boolean,
-    sharedElementRouteTransition: Boolean,
-    transitionInProgress: Boolean,
-    entryInvolvesVideoDetail: Boolean,
-    entryIsUnderlyingSource: Boolean
-): VideoSharedTransitionBackdropFrame {
-    val enabled = shouldApplyVideoSharedTransitionBackdropToEntry(
-        cardTransitionEnabled = cardTransitionEnabled,
-        sharedElementRouteTransition = sharedElementRouteTransition,
-        transitionInProgress = transitionInProgress,
-        entryInvolvesVideoDetail = entryInvolvesVideoDetail,
-        entryIsUnderlyingSource = entryIsUnderlyingSource
-    )
-    return if (enabled) {
-        VideoSharedTransitionBackdropFrame(
-            enabled = true,
-            blurRadiusDp = VIDEO_SHARED_TRANSITION_BACKDROP_BLUR_DP,
-            scrimAlpha = VIDEO_SHARED_TRANSITION_BACKDROP_SCRIM_ALPHA
-        )
-    } else {
-        VideoSharedTransitionBackdropFrame(
-            enabled = false,
-            blurRadiusDp = 0f,
-            scrimAlpha = 0f
-        )
-    }
 }
 
 internal fun resolveVideoCardSharedTransitionMotionSpec(

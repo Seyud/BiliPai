@@ -443,7 +443,6 @@ data class HomeSettings(
     val videoSharedTransitionSpeed: VideoSharedTransitionSpeed = VideoSharedTransitionSpeed.STANDARD,
     val videoSharedTransitionCustomDurationMillis: Int =
         VIDEO_SHARED_TRANSITION_CUSTOM_DEFAULT_MILLIS,
-    val videoTransitionRealtimeBlurEnabled: Boolean = true, // 视频转场实时模糊（默认开启）
     val smartVisualGuardEnabled: Boolean = false, // [Retired] 智能流畅优先已下线，固定关闭
     val compactVideoStatsOnCover: Boolean = true, //  播放量/评论数显示在封面底部（默认开启）
     val lowQualityHomeCoverInDataSaver: Boolean = false, // 省流量时首页封面使用低清晰度
@@ -1135,8 +1134,6 @@ object SettingsManager {
     //  [新增] 界面入场动画 master 开关(全 App 统一入场动效),默认开启
     private val KEY_UI_ENTRANCE_ANIMATION_ENABLED =
         booleanPreferencesKey("ui_entrance_animation_enabled")
-    private val KEY_VIDEO_TRANSITION_REALTIME_BLUR_ENABLED =
-        booleanPreferencesKey("video_transition_realtime_blur_enabled")
     // [New] 运行时视觉降级守卫开关
     private val KEY_SMART_VISUAL_GUARD_ENABLED = booleanPreferencesKey("smart_visual_guard_enabled")
     //  [新增] 视频卡片统计信息贴封面开关
@@ -1270,8 +1267,6 @@ object SettingsManager {
                     preferences[KEY_VIDEO_SHARED_TRANSITION_CUSTOM_DURATION_MILLIS]
                         ?: VIDEO_SHARED_TRANSITION_CUSTOM_DEFAULT_MILLIS
                 ),
-            videoTransitionRealtimeBlurEnabled =
-                preferences[KEY_VIDEO_TRANSITION_REALTIME_BLUR_ENABLED] ?: true,
             smartVisualGuardEnabled = false,
             compactVideoStatsOnCover = preferences[KEY_COMPACT_VIDEO_STATS_ON_COVER] ?: true,
             lowQualityHomeCoverInDataSaver =
@@ -2331,16 +2326,6 @@ object SettingsManager {
 
     suspend fun setUiEntranceAnimationEnabled(context: Context, value: Boolean) {
         context.settingsDataStore.edit { preferences -> preferences[KEY_UI_ENTRANCE_ANIMATION_ENABLED] = value }
-    }
-
-    fun getVideoTransitionRealtimeBlurEnabled(context: Context): Flow<Boolean> =
-        context.settingsDataStore.data
-            .map { preferences -> preferences[KEY_VIDEO_TRANSITION_REALTIME_BLUR_ENABLED] ?: true }
-
-    suspend fun setVideoTransitionRealtimeBlurEnabled(context: Context, value: Boolean) {
-        context.settingsDataStore.edit { preferences ->
-            preferences[KEY_VIDEO_TRANSITION_REALTIME_BLUR_ENABLED] = value
-        }
     }
 
     fun getSmartVisualGuardEnabled(context: Context): Flow<Boolean> = context.settingsDataStore.data
@@ -5962,10 +5947,6 @@ object SettingsManager {
             IntShareablePreferenceDefinition(KEY_VIDEO_SHARED_TRANSITION_SPEED, SettingsShareSection.APPEARANCE),
             IntShareablePreferenceDefinition(
                 KEY_VIDEO_SHARED_TRANSITION_CUSTOM_DURATION_MILLIS,
-                SettingsShareSection.APPEARANCE
-            ),
-            BooleanShareablePreferenceDefinition(
-                KEY_VIDEO_TRANSITION_REALTIME_BLUR_ENABLED,
                 SettingsShareSection.APPEARANCE
             ),
             BooleanShareablePreferenceDefinition(KEY_COMPACT_VIDEO_STATS_ON_COVER, SettingsShareSection.APPEARANCE),

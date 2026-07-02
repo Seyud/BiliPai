@@ -29,12 +29,12 @@ class OnboardingSettingsGuidePolicyTest {
     }
 
     @Test
-    fun performanceProfileOnlyDisablesRealtimeTransitionBlur() {
+    fun performanceProfileKeepsCoreVideoTransition() {
         val preset = resolveOnboardingSettingsGuidePreset(OnboardingSettingsProfile.PERFORMANCE)
 
         assertTrue(preset.cardTransitionEnabled)
-        assertFalse(preset.videoTransitionRealtimeBlurEnabled)
         assertFalse(preset.lowQualityHomeCoverInDataSaver)
+        assertTrue(preset.summaryLines.contains("保留核心视频过渡"))
     }
 
     @Test
@@ -43,6 +43,6 @@ class OnboardingSettingsGuidePolicyTest {
 
         assertEquals(SettingsManager.DataSaverMode.MOBILE_ONLY, preset.dataSaverMode)
         assertTrue(preset.lowQualityHomeCoverInDataSaver)
-        assertTrue(preset.videoTransitionRealtimeBlurEnabled)
+        assertTrue(preset.cardTransitionEnabled)
     }
 }

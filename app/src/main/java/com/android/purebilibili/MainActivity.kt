@@ -20,7 +20,6 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.SystemBarStyle
-import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
@@ -59,7 +58,9 @@ import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.unit.Density
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerView
@@ -95,6 +96,9 @@ import com.android.purebilibili.core.theme.buildDisplayMetricsSnapshot
 import com.android.purebilibili.core.ui.IOSAlertDialog
 import com.android.purebilibili.core.ui.IOSDialogAction
 import com.android.purebilibili.core.ui.blur.ProvideUnifiedBlurIntensity
+import com.android.purebilibili.core.ui.transition.native.LocalNativeVideoCardTransitionController
+import com.android.purebilibili.core.ui.transition.native.NativeVideoCardTransitionController
+import com.android.purebilibili.core.ui.transition.native.NativeVideoCardTransitionOverlayView
 import com.android.purebilibili.core.util.BilibiliUrlParser
 import com.android.purebilibili.core.util.LocalWindowSizeClass
 import com.android.purebilibili.core.util.calculateWindowSizeClass
@@ -1028,7 +1032,38 @@ open class MainActivity : AppCompatActivity() {
             }
         }
 
-        setContent {
+        val composeContentView = ComposeView(this).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+        }
+        val nativeVideoTransitionOverlay = NativeVideoCardTransitionOverlayView(this)
+        val nativeVideoTransitionController = NativeVideoCardTransitionController(
+            context = this,
+            contentView = composeContentView,
+            overlayView = nativeVideoTransitionOverlay,
+            scope = lifecycleScope
+        )
+        val rootContainer = FrameLayout(this).apply {
+            addView(
+                composeContentView,
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+                )
+            )
+            addView(
+                nativeVideoTransitionOverlay,
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+                )
+            )
+        }
+        setContentView(rootContainer)
+
+        composeContentView.setContent {
+            CompositionLocalProvider(
+                LocalNativeVideoCardTransitionController provides nativeVideoTransitionController
+            ) {
             val context = LocalContext.current
             val uriHandler = LocalUriHandler.current
             val scope = rememberCoroutineScope()
@@ -1843,6 +1878,7 @@ open class MainActivity : AppCompatActivity() {
                     }
                     }  // 📐 CompositionLocalProvider 结束
                 }
+            }
             }
         }
     }

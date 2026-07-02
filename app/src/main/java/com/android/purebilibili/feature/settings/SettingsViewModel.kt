@@ -71,7 +71,6 @@ data class SettingsUiState(
     val videoSharedTransitionSpeed: VideoSharedTransitionSpeed = VideoSharedTransitionSpeed.STANDARD,
     val videoSharedTransitionCustomDurationMillis: Int =
         VIDEO_SHARED_TRANSITION_CUSTOM_DEFAULT_MILLIS,
-    val videoTransitionRealtimeBlurEnabled: Boolean = true,
     val smartVisualGuardEnabled: Boolean = false, // [Retired] 智能流畅优先已下线
     val cacheSize: String = "计算中...",
     val cacheBreakdown: CacheUtils.CacheBreakdown? = null,  //  详细缓存统计
@@ -144,7 +143,6 @@ data class ExtraSettings(
     val cardTransitionEnabled: Boolean,
     val videoSharedTransitionSpeed: VideoSharedTransitionSpeed,
     val videoSharedTransitionCustomDurationMillis: Int,
-    val videoTransitionRealtimeBlurEnabled: Boolean,
     val smartVisualGuardEnabled: Boolean,
     val hapticFeedbackEnabled: Boolean, // [Restored]
     val topBarLiquidGlassEnabled: Boolean = false,
@@ -209,7 +207,6 @@ private data class BaseSettings(
     val cardTransitionEnabled: Boolean, //  卡片过渡动画
     val videoSharedTransitionSpeed: VideoSharedTransitionSpeed,
     val videoSharedTransitionCustomDurationMillis: Int,
-    val videoTransitionRealtimeBlurEnabled: Boolean,
     val smartVisualGuardEnabled: Boolean, // [New]
     val hapticFeedbackEnabled: Boolean, // [新增]
     val topBarLiquidGlassEnabled: Boolean,
@@ -315,7 +312,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         SettingsManager.getCardTransitionEnabled(context).asAnyFlow(),
         SettingsManager.getVideoSharedTransitionSpeed(context).asAnyFlow(),
         SettingsManager.getVideoSharedTransitionCustomDurationMillis(context).asAnyFlow(),
-        SettingsManager.getVideoTransitionRealtimeBlurEnabled(context).asAnyFlow(),
         SettingsManager.getSmartVisualGuardEnabled(context).asAnyFlow(), // [New]
         SettingsManager.getHapticFeedbackEnabled(context).asAnyFlow(), // [新增]
         SettingsManager.getTopBarLiquidGlassEnabled(context).asAnyFlow(),
@@ -341,24 +337,23 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         val cardTransition = values[4] as Boolean
         val videoSharedTransitionSpeed = values[5] as VideoSharedTransitionSpeed
         val videoSharedTransitionCustomDurationMillis = values[6] as Int
-        val videoTransitionRealtimeBlur = values[7] as Boolean
-        val smartVisualGuard = values[8] as Boolean
-        val hapticFeedback = values[9] as Boolean
-        val topBarLiquidGlass = values[10] as Boolean
-        val homeSearchLiquidGlass = values[11] as Boolean
-        val bottomBarLiquidGlass = values[12] as Boolean
-        val bottomBarSearch = values[13] as Boolean
-        val bottomBarSearchAutoExpandMode = values[14] as BottomBarSearchAutoExpandMode
-        val bottomBarSearchLayoutMode = values[15] as BottomBarSearchLayoutMode
-        val androidNativeLiquidGlass = values[16] as Boolean
-        val liquidGlassStyle = values[17] as com.android.purebilibili.core.store.LiquidGlassStyle
-        val liquidGlassMode = values[18] as LiquidGlassMode
-        val liquidGlassStrength = values[19] as Float
-        val liquidGlassProgress = values[20] as Float
-        val tabletUseSidebar = values[21] as Boolean
-        val headerCollapse = values[22] as Boolean
-        val gridColumnCount = values[23] as Int
-        val homeFeedCardWidthPreset = values[24] as HomeFeedCardWidthPreset
+        val smartVisualGuard = values[7] as Boolean
+        val hapticFeedback = values[8] as Boolean
+        val topBarLiquidGlass = values[9] as Boolean
+        val homeSearchLiquidGlass = values[10] as Boolean
+        val bottomBarLiquidGlass = values[11] as Boolean
+        val bottomBarSearch = values[12] as Boolean
+        val bottomBarSearchAutoExpandMode = values[13] as BottomBarSearchAutoExpandMode
+        val bottomBarSearchLayoutMode = values[14] as BottomBarSearchLayoutMode
+        val androidNativeLiquidGlass = values[15] as Boolean
+        val liquidGlassStyle = values[16] as com.android.purebilibili.core.store.LiquidGlassStyle
+        val liquidGlassMode = values[17] as LiquidGlassMode
+        val liquidGlassStrength = values[18] as Float
+        val liquidGlassProgress = values[19] as Float
+        val tabletUseSidebar = values[20] as Boolean
+        val headerCollapse = values[21] as Boolean
+        val gridColumnCount = values[22] as Int
+        val homeFeedCardWidthPreset = values[23] as HomeFeedCardWidthPreset
         
         data class Ui2(
             val f: Boolean,
@@ -368,7 +363,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             val ct: Boolean,
             val vsts: VideoSharedTransitionSpeed,
             val vstcdm: Int,
-            val vtrb: Boolean,
             val svg: Boolean,
             val h: Boolean,
             val tlg: Boolean,
@@ -395,7 +389,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             cardTransition,
             videoSharedTransitionSpeed,
             videoSharedTransitionCustomDurationMillis,
-            videoTransitionRealtimeBlur,
             smartVisualGuard,
             hapticFeedback,
             topBarLiquidGlass,
@@ -435,7 +428,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             cardTransitionEnabled = ui2.ct,
             videoSharedTransitionSpeed = ui2.vsts,
             videoSharedTransitionCustomDurationMillis = ui2.vstcdm,
-            videoTransitionRealtimeBlurEnabled = ui2.vtrb,
             smartVisualGuardEnabled = ui2.svg,
             hapticFeedbackEnabled = ui2.h, // [新增]
             topBarLiquidGlassEnabled = ui2.tlg,
@@ -530,7 +522,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             videoSharedTransitionSpeed = extra.videoSharedTransitionSpeed,
             videoSharedTransitionCustomDurationMillis =
                 extra.videoSharedTransitionCustomDurationMillis,
-            videoTransitionRealtimeBlurEnabled = extra.videoTransitionRealtimeBlurEnabled,
             smartVisualGuardEnabled = extra.smartVisualGuardEnabled,
             hapticFeedbackEnabled = extra.hapticFeedbackEnabled, // [新增]
             topBarLiquidGlassEnabled = extra.topBarLiquidGlassEnabled,
@@ -594,7 +585,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             videoSharedTransitionSpeed = settings.videoSharedTransitionSpeed,
             videoSharedTransitionCustomDurationMillis =
                 settings.videoSharedTransitionCustomDurationMillis,
-            videoTransitionRealtimeBlurEnabled = settings.videoTransitionRealtimeBlurEnabled,
             smartVisualGuardEnabled = settings.smartVisualGuardEnabled,
             hapticFeedbackEnabled = settings.hapticFeedbackEnabled, // [新增]
             topBarLiquidGlassEnabled = settings.topBarLiquidGlassEnabled,
@@ -840,12 +830,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setVideoSharedTransitionCustomDurationMillis(durationMillis: Int) {
         viewModelScope.launch {
             SettingsManager.setVideoSharedTransitionCustomDurationMillis(context, durationMillis)
-        }
-    }
-
-    fun toggleVideoTransitionRealtimeBlur(value: Boolean) {
-        viewModelScope.launch {
-            SettingsManager.setVideoTransitionRealtimeBlurEnabled(context, value)
         }
     }
 

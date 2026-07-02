@@ -158,9 +158,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import com.android.purebilibili.core.ui.LocalSharedTransitionScope
 import com.android.purebilibili.core.ui.LocalAnimatedVisibilityScope
 import com.android.purebilibili.core.ui.transition.LocalVideoSharedTransitionSpeedSettings
-import com.android.purebilibili.core.ui.transition.LocalVideoCardTransitionSession
-import com.android.purebilibili.core.ui.transition.VideoCardTransitionPhase
-import com.android.purebilibili.core.ui.transition.VideoCardTransitionSession
 import com.android.purebilibili.core.ui.transition.VideoSharedTransitionPlaybackIntent
 import com.android.purebilibili.core.ui.transition.resolveVideoCardSharedTransitionMotionSpec
 import com.android.purebilibili.core.ui.transition.resolveVideoCardSharedTransitionEasing
@@ -617,12 +614,6 @@ internal data class VideoDetailEntryVisualFrame(
     val blurRadiusPx: Float
 )
 
-internal data class VideoDetailLoadingTransitionFrame(
-    val showLoadingContent: Boolean,
-    val containerBackgroundAlpha: Float,
-    val loadingContentAlpha: Float
-)
-
 internal data class VideoDetailRouteSheetMotion(
     val enabled: Boolean,
     val durationMillis: Int,
@@ -851,48 +842,14 @@ private fun VideoDetailRouteSheetHost(
     }
 }
 
-internal fun resolveVideoDetailEntryVisualFrame(
-    rawProgress: Float,
-    transitionEnabled: Boolean,
-    fallbackBlurEnabled: Boolean = false,
-    maxBlurRadiusPx: Float
-): VideoDetailEntryVisualFrame {
+internal fun resolveVideoDetailEntryVisualFrame(): VideoDetailEntryVisualFrame {
     // 共享元素模式下，sharedBounds 已经处理视觉过渡，
     // 额外的 alpha/blur 会与共享元素动画冲突导致闪烁。
-    if (transitionEnabled || !fallbackBlurEnabled) {
-        return VideoDetailEntryVisualFrame(
-            contentAlpha = 1f,
-            scrimAlpha = 0f,
-            blurRadiusPx = 0f
-        )
-    }
-    val progress = rawProgress.coerceIn(0f, 1f)
-    val maxLightBlurRadiusPx = maxBlurRadiusPx.coerceAtMost(6f).coerceAtLeast(0f)
     return VideoDetailEntryVisualFrame(
         contentAlpha = 1f,
         scrimAlpha = 0f,
-        blurRadiusPx = maxLightBlurRadiusPx * (1f - progress)
+        blurRadiusPx = 0f
     )
-}
-
-internal fun resolveVideoDetailLoadingTransitionFrame(
-    session: VideoCardTransitionSession
-): VideoDetailLoadingTransitionFrame {
-    val expanding = session.phase == VideoCardTransitionPhase.EXPANDING &&
-        session.progress < 1f - 0.001f
-    return if (expanding) {
-        VideoDetailLoadingTransitionFrame(
-            showLoadingContent = false,
-            containerBackgroundAlpha = 0f,
-            loadingContentAlpha = 0f
-        )
-    } else {
-        VideoDetailLoadingTransitionFrame(
-            showLoadingContent = true,
-            containerBackgroundAlpha = 1f,
-            loadingContentAlpha = 1f
-        )
-    }
 }
 
 internal fun shouldApplyPipParamsUpdate(
@@ -1156,9 +1113,7 @@ fun VideoDetailScreen(
     onMarkReturningFromDetail: () -> Unit = {},
     onClearReturningFromDetail: () -> Unit = {},
     transitionEnabled: Boolean = false,
-    fallbackEntryBlurEnabled: Boolean = false,
     transitionEnterDurationMillis: Int = 320,
-    transitionMaxBlurRadiusPx: Float = 20f,
     onBack: () -> Unit,
     onHomeClick: () -> Unit = onBack,
     onNavigateToAudioMode: () -> Unit = {},
@@ -1214,19 +1169,6 @@ fun VideoDetailScreen(
         )
     }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val videoCardTransitionSession = LocalVideoCardTransitionSession.current
-    val detailLoadingTransitionFrame = remember(videoCardTransitionSession) {
-        resolveVideoDetailLoadingTransitionFrame(videoCardTransitionSession)
-    }
-    val detailLoadingBackgroundAlpha by animateFloatAsState(
-        targetValue = if (uiState is PlayerUiState.Loading) {
-            detailLoadingTransitionFrame.containerBackgroundAlpha
-        } else {
-            1f
-        },
-        animationSpec = tween(durationMillis = 140),
-        label = "video-detail-loading-background"
-    )
     val resumePlaybackSuggestion by viewModel.resumePlaybackSuggestion.collectAsStateWithLifecycle()
     val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
     var isNavigatingToVideo by remember { mutableStateOf(false) }
@@ -1361,7 +1303,7 @@ fun VideoDetailScreen(
     // shell sharedBounds 接管整体 morph 时，内容必须从第一帧就处在最终布局，
     // 不能再走 isTransitionFinished 门控触发的二级 fadeIn / slide / shrink。
     val shellSharedBoundsLikely = transitionEnabled && !sourceRouteForSharedElement.isNullOrBlank()
-    val entryVisualEnabled = transitionEnabled || fallbackEntryBlurEnabled
+    val entryVisualEnabled = transitionEnabled
     var isTransitionFinished by remember {
         mutableStateOf(!entryVisualEnabled || shellSharedBoundsLikely)
     }
@@ -1392,18 +1334,8 @@ fun VideoDetailScreen(
         isTransitionFinished = true
     }
 
-    val entryVisualFrame = remember(
-        entryVisualProgress.value,
-        transitionEnabled,
-        fallbackEntryBlurEnabled,
-        transitionMaxBlurRadiusPx
-    ) {
-        resolveVideoDetailEntryVisualFrame(
-            rawProgress = entryVisualProgress.value,
-            transitionEnabled = transitionEnabled,
-            fallbackBlurEnabled = fallbackEntryBlurEnabled,
-            maxBlurRadiusPx = transitionMaxBlurRadiusPx
-        )
+    val entryVisualFrame = remember {
+        resolveVideoDetailEntryVisualFrame()
     }
 
     //  监听评论状态
@@ -3687,47 +3619,32 @@ fun VideoDetailScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(
-                                    MaterialTheme.colorScheme.background.copy(
-                                        alpha = detailLoadingBackgroundAlpha
-                                    )
-                                )
+                                .background(MaterialTheme.colorScheme.background)
                                 // .nestedScroll(nestedScrollConnection) // [Remove] 移除嵌套滚动，确保 Tabs 正常滑动
                         ) {
                             when (uiState) {
                                 is PlayerUiState.Loading -> {
                                     val loadingState = uiState as PlayerUiState.Loading
-                                    val loadingContentAlpha by animateFloatAsState(
-                                        targetValue = detailLoadingTransitionFrame.loadingContentAlpha,
-                                        animationSpec = tween(durationMillis = 160),
-                                        label = "video-detail-loading-content"
-                                    )
-                                    if (detailLoadingTransitionFrame.showLoadingContent || loadingContentAlpha > 0.01f) {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .graphicsLayer { alpha = loadingContentAlpha }
-                                        ) {
-                                            //  显示重试进度
-                                            if (loadingState.retryAttempt > 0) {
-                                                Box(
-                                                    modifier = Modifier.fillMaxSize(),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                                        //  iOS 风格加载
-                                                        CupertinoActivityIndicator()
-                                                        Spacer(Modifier.height(16.dp))
-                                                        Text(
-                                                            text = "正在重试 ${loadingState.retryAttempt}/${loadingState.maxAttempts}...",
-                                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                                            fontSize = 14.sp
-                                                        )
-                                                    }
+                                    Box(modifier = Modifier.fillMaxSize()) {
+                                        //  显示重试进度
+                                        if (loadingState.retryAttempt > 0) {
+                                            Box(
+                                                modifier = Modifier.fillMaxSize(),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                    //  iOS 风格加载
+                                                    CupertinoActivityIndicator()
+                                                    Spacer(Modifier.height(16.dp))
+                                                    Text(
+                                                        text = "正在重试 ${loadingState.retryAttempt}/${loadingState.maxAttempts}...",
+                                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                                        fontSize = 14.sp
+                                                    )
                                                 }
-                                            } else {
-                                                VideoDetailSkeleton()
                                             }
+                                        } else {
+                                            VideoDetailSkeleton()
                                         }
                                     }
                                 }
