@@ -114,4 +114,17 @@ class VideoDetailReturnCoverPolicyTest {
     fun `cover takeover delay keeps a one-frame budget before back navigation`() {
         assertEquals(16L, resolveCoverTakeoverDelayBeforeBackNavigationMillis())
     }
+
+    @Test
+    fun `player container shared bounds are disabled during return to avoid cover key conflict`() {
+        val source = File("src/main/java/com/android/purebilibili/feature/video/screen/VideoDetailScreen.kt")
+            .readText()
+        val playerContainerBlock = source
+            .substringAfter("val playerContainerModifier = if (")
+            .substringBefore(") {")
+        assertTrue(
+            "Player container must not claim the cover shared bounds during return; the forced return cover overlay owns that key.",
+            playerContainerBlock.contains("!forceCoverOnlyForReturn")
+        )
+    }
 }

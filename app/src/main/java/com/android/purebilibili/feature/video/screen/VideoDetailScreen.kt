@@ -3445,7 +3445,8 @@ fun VideoDetailScreen(
                                 hasAnimatedVisibilityScope = animatedVisibilityScope != null
                             ) &&
                             activeVideoSharedTransitionVisualSpec.useCoverSharedBounds &&
-                            videoSharedPlaybackIntent == VideoSharedTransitionPlaybackIntent.ImmediatePlayback
+                            videoSharedPlaybackIntent == VideoSharedTransitionPlaybackIntent.ImmediatePlayback &&
+                            !forceCoverOnlyForReturn
                         ) {
                             with(requireNotNull(sharedTransitionScope)) {
                                 Modifier
